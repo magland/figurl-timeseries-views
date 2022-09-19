@@ -1,0 +1,45 @@
+{
+  "name": "@figurl/timeseries-views",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "src",
+    "src/**/*",
+    "test-gui/src/package/**/*"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "copy-files": "copyfiles -u 1 src/**/*.css dist/",
+    "build": "rm -rf dist && tsc && yarn copy-files",
+    "prepare": "npm run build",
+    "release-github": "yarn build && yarn pack && gh release create $npm_package_version figurl-spike-sorting-views-v$npm_package_version.tgz",
+    "release": "yarn build && npm publish && git tag $npm_package_version && git push --tags"
+  },
+  "keywords": [],
+  "author": "Jeremy Magland",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/react": "^18.0.20",
+    "copyfiles": "^2.4.1",
+    "typescript": "^4.8.3"
+  },
+  "peerDependencies": {
+    "react": ">= 18.0.0"
+  },
+  "dependencies": {
+    "@figurl/core-views": "^0.1",
+    "@figurl/interface": "^0.1",
+    "@types/node": "^18.7.18",
+    "assert": "npm:assert-browserify",
+    "buffer": "npm:buffer-browserify",
+    "crypto": "npm:crypto-browserify",
+    "react-sizeme": "^3.0.2",
+    "@fortawesome/fontawesome-svg-core": "^6.1.1",
+    "@fortawesome/free-regular-svg-icons": "^6.1.2",
+    "@fortawesome/free-solid-svg-icons": "^6.1.1",
+    "@fortawesome/react-fontawesome": "^0.2.0"
+  }
+}
