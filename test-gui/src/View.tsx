@@ -1,26 +1,25 @@
-import { MainLayoutView } from '@figurl/core-views';
+import { loadView as loadCoreView } from '@figurl/core-views';
+import { loadView as loadTimeseriesView } from './package';
 import { FunctionComponent } from 'react';
-import { TimeseriesGraphView } from './package';
-import { ViewData } from './ViewData';
+import { loadView as loadSpikeSortingView } from '@figurl/spike-sorting-views';
 
 type Props = {
-    data: ViewData
+    data: any
     opts: any
     width: number
     height: number
 }
 
 const View: FunctionComponent<Props> = ({data, width, height, opts}) => {
-    if (data.type === 'TimeseriesGraph') {
-        return <TimeseriesGraphView data={data} width={width} height={height} />
+    const viewLoaders = [loadCoreView, loadTimeseriesView, loadSpikeSortingView]
+    for (let loadView of viewLoaders) {
+        const v = loadView({data, width, height, opts, ViewComponent: View})
+        if (v) return v
     }
-    else if (data.type === 'MainLayout') {
-        return <MainLayoutView data={data} ViewComponent={View} width={width} height={height} />
-    }
-    else {
-        console.warn('Unsupported view data', data)
-        return <div>Unsupported view data: {data['type']}</div>
-    }
+    console.warn(data)
+    return (
+        <div>Invalid view data: {data.type}</div>
+    )
 }
 
 export default View
