@@ -1,6 +1,6 @@
 {
   "name": "test-gui",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "private": true,
   "dependencies": {
     "@figurl/core-views": "^0.1",
