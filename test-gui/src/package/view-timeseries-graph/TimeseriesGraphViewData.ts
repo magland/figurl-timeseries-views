@@ -44,5 +44,5 @@ export const isTimeseriesGraphViewData = (x: any): x is TimeseriesGraphViewData 
         legendOpts: optional((y: any) => validateObject(y, {
             location: isString
         }))
-    }, {allowAdditionalFields: true, callback: (a) => console.warn(a)})
+    }, {allowAdditionalFields: true})
 }
