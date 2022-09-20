@@ -1,19 +1,18 @@
 import { MuiThemeProvider } from '@material-ui/core';
-import { defaultRecordingSelection, RecordingSelectionContext, recordingSelectionReducer } from './package';
+import { defaultRecordingSelection, RecordingSelectionContext, recordingSelectionReducer, SetupAnnotations } from './package';
 import { getFigureData, SetupUrlState, startListeningToParent } from '@figurl/interface';
 import { useWindowDimensions } from '@figurl/core-utils';
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import './localStyles.css';
 import theme from './theme';
 import View from './View';
-import { isViewData, ViewData } from './ViewData';
 // import { SetupAnnotations } from 'libraries/context-annotations';
 
 const urlSearchParams = new URLSearchParams(window.location.search)
 const queryParams = Object.fromEntries(urlSearchParams.entries())
 
 function App() {
-  const [data, setData] = useState<ViewData>()
+  const [data, setData] = useState<any>()
   const [errorMessage, setErrorMessage] = useState<string>()
   const {width, height} = useWindowDimensions()
 
@@ -28,9 +27,8 @@ function App() {
     }
     else {
       getFigureData().then((data: any) => {
-        if (!isViewData(data)) {
-          setErrorMessage(`Invalid figure data`)
-          console.error('Invalid figure data', data)
+        if (!data) {
+          setErrorMessage(`No data returned from getFigureData`)
           return
         }
         setData(data)
@@ -79,7 +77,7 @@ function App() {
     <MuiThemeProvider theme={theme}>
       <RecordingSelectionContext.Provider value={{recordingSelection, recordingSelectionDispatch}}>
         {/* <UnitSelectionContext.Provider value={{unitSelection, unitSelectionDispatch}}> */}
-          {/* <SetupAnnotations> */}
+          <SetupAnnotations>
             <SetupUrlState>
               <View
                 data={data}
@@ -88,7 +86,7 @@ function App() {
                 height={height - 5}
               />
             </SetupUrlState>
-          {/* </SetupAnnotations> */}
+          </SetupAnnotations>
         {/* </UnitSelectionContext.Provider> */}
       </RecordingSelectionContext.Provider>
     </MuiThemeProvider>

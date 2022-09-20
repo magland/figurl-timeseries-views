@@ -1,4 +1,4 @@
-import { isEqualTo, isNumber, optional, validateObject } from "@figurl/core-utils"
+import { isEqualTo, isNumber, optional, validateObject, isArrayOf } from "@figurl/core-utils"
 import { isString } from "mathjs"
 
 type LegendOpts = {
@@ -29,20 +29,20 @@ export type TimeseriesGraphViewData = {
 export const isTimeseriesGraphViewData = (x: any): x is TimeseriesGraphViewData => {
     return validateObject(x, {
         type: isEqualTo('TimeseriesGraph'),
-        datasets: y => (validateObject(y, {
+        datasets: isArrayOf(y => (validateObject(y, {
             name: isString,
             data: () => (true)
-        })),
-        series: y => (validateObject(y, {
+        }))),
+        series: isArrayOf(y => (validateObject(y, {
             type: isString,
             dataset: isString,
             encoding: () => (true),
             attributes: () => (true),
             title: optional(isString)
-        })),
+        }))),
         timeOffset: optional(isNumber),
         legendOpts: optional((y: any) => validateObject(y, {
             location: isString
         }))
-    }, {allowAdditionalFields: true})
+    }, {allowAdditionalFields: true, callback: (a) => console.warn(a)})
 }
