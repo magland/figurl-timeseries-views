@@ -102,12 +102,20 @@ export const useTimeRange = (timestampOffset=0) => {
             deltaT
         })
     }, [recordingSelectionDispatch])
+    const setVisibleTimeRange = useCallback((startTimeSec: number, endTimeSec: number) => {
+        recordingSelectionDispatch({
+            type: 'setVisibleTimeRange',
+            startTimeSec,
+            endTimeSec
+        })
+    }, [recordingSelectionDispatch])
     return {
         visibleTimeStartSeconds: recordingSelection.visibleTimeStartSeconds !== undefined ? recordingSelection.visibleTimeStartSeconds - timestampOffset : undefined,
         visibleTimeEndSeconds: recordingSelection.visibleTimeEndSeconds !== undefined ? recordingSelection.visibleTimeEndSeconds - timestampOffset : undefined,
         zoomRecordingSelection,
         panRecordingSelection,
-        panRecordingSelectionDeltaT
+        panRecordingSelectionDeltaT,
+        setVisibleTimeRange
     }
 }
 
@@ -191,6 +199,12 @@ type ZoomRecordingSelectionAction = {
     factor?: number // Factor should always be >= 1 (if we zoom in, we'll use the inverse of factor.)
 }
 
+type SetVisibleTimeRangeAction = {
+    type: 'setVisibleTimeRange',
+    startTimeSec: number,
+    endTimeSec: number
+}
+
 type SetFocusTimeRecordingSelectionAction = {
     type: 'setFocusTime',
     focusTimeSec: number,
@@ -210,7 +224,7 @@ type SetSelectedElectrodeIdsRecordingSelectionAction = {
 }
 
 export type RecordingSelectionAction = InitializeRecordingSelectionTimesAction  | PanRecordingSelectionAction
-    | PanRecordingSelectionDeltaTAction | ZoomRecordingSelectionAction | SetFocusTimeRecordingSelectionAction | SetFocusTimeIntervalRecordingSelectionAction | SetSelectedElectrodeIdsRecordingSelectionAction
+    | PanRecordingSelectionDeltaTAction | ZoomRecordingSelectionAction | SetVisibleTimeRangeAction | SetFocusTimeRecordingSelectionAction | SetFocusTimeIntervalRecordingSelectionAction | SetSelectedElectrodeIdsRecordingSelectionAction
 
 export const recordingSelectionReducer = (state: RecordingSelection, action: RecordingSelectionAction): RecordingSelection => {
     if (action.type === 'initializeRecordingSelectionTimes') {
@@ -221,6 +235,8 @@ export const recordingSelectionReducer = (state: RecordingSelection, action: Rec
         return panTimeDeltaT(state, action)
     } else if (action.type === 'zoomIn' || action.type === 'zoomOut') {
         return zoomTime(state, action)
+    } else if (action.type === 'setVisibleTimeRange') {
+        return setVisibleTimeRange(state, action)
     } else if (action.type === 'setFocusTime') {
         return setFocusTime(state, action)
     } else if (action.type === 'setFocusTimeInterval') {
@@ -338,6 +354,14 @@ const zoomTime = (state: RecordingSelection, action: ZoomRecordingSelectionActio
         ...state,
         visibleTimeStartSeconds: newStart,
         visibleTimeEndSeconds: newEnd
+    }
+}
+
+const setVisibleTimeRange = (state: RecordingSelection, action: SetVisibleTimeRangeAction): RecordingSelection => {
+    return {
+        ...state,
+        visibleTimeStartSeconds: action.startTimeSec,
+        visibleTimeEndSeconds: action.endTimeSec
     }
 }
 
