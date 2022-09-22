@@ -1,14 +1,9 @@
+import { FunctionComponent, useCallback, useMemo } from 'react'
 import { DefaultToolbarWidth, TimeScrollView, TimeScrollViewPanel, usePanelDimensions, useProjectedYAxisTicks, useTimeseriesMargins, useYAxisTicks } from '../component-time-scroll-view'
 import { useRecordingSelectionTimeInitialization, useTimeRange } from '../context-recording-selection'
+import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts'
 import { convert2dDataSeries, getYAxisPixelZero, use2dScalingMatrix } from '../util-point-projection'
-import { FunctionComponent, useCallback, useMemo } from 'react'
 import { TimeseriesGraphViewData } from './TimeseriesGraphViewData'
-
-export type TimeseriesLayoutOpts = {
-    hideToolbar?: boolean
-    hideTimeAxis?: boolean
-    useYAxis?: boolean
-}
 
 type Props = {
     data: TimeseriesGraphViewData
