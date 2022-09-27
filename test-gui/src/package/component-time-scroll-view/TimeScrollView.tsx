@@ -1,10 +1,11 @@
 import { Splitter } from '@figurl/core-views';
+import { useEffect, useMemo, useRef } from 'react';
 import { DefaultToolbarWidth } from '../component-time-scroll-view';
 import { useAnnotations } from '../context-annotations';
 import { useTimeRange } from '../context-recording-selection';
+import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts';
 import { convert1dDataSeries, use1dScalingMatrix } from '../util-point-projection';
 import { ViewToolbar } from '../ViewToolbar';
-import { useEffect, useMemo, useRef } from 'react';
 import { useTimeTicks } from './TimeAxisTicks';
 import useActionToolbar, { OptionalToolbarActions } from './TimeScrollViewActionsToolbar';
 import { HighlightIntervalSet } from './TimeScrollViewData';
@@ -18,7 +19,6 @@ import TSVCursorLayer from './TSVCursorLayer';
 import TSVHighlightLayer from './TSVHighlightLayer';
 import TSVMainLayer from './TSVMainLayer';
 import { TickSet } from './YAxisTicks';
-import { TimeseriesLayoutOpts } from '../view-timeseries-graph/TimeseriesGraphView';
 
 
 export type TimeScrollViewPanel<T extends {[key: string]: any}> = {
