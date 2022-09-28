@@ -1,8 +1,8 @@
-import { useTimeFocus } from '../context-recording-selection';
-import { convert1dDataSeries } from '../util-point-projection';
 import { Matrix } from 'mathjs';
 import { useMemo } from 'react';
-import { TimeseriesLayoutOpts } from '../view-timeseries-graph/TimeseriesGraphView';
+import { useTimeFocus } from '../context-recording-selection';
+import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts';
+import { convert1dDataSeries } from '../util-point-projection';
 
 type PartialMargins = {
     left?: number,

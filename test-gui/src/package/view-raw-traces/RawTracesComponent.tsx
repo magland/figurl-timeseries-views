@@ -1,13 +1,10 @@
-import { useRecordingSelectionTimeInitialization, useTimeRange } from '../context-recording-selection'
+import { colorForUnitId, useFetchCache } from '@figurl/core-utils'
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
-import { convert1dDataSeries, use1dScalingMatrix } from '../util-point-projection'
 import { AmplitudeScaleToolbarEntries } from '../AmplitudeScaleToolbarEntries'
-import { colorForUnitId } from '@figurl/core-utils'
-import { TimeScrollView } from '../component-time-scroll-view'
-import { usePanelDimensions, useTimeseriesMargins } from '../component-time-scroll-view'
-import { DefaultToolbarWidth } from '../component-time-scroll-view'
-import { useFetchCache } from '@figurl/core-utils'
-import { TimeseriesLayoutOpts } from '../view-timeseries-graph/TimeseriesGraphView'
+import { DefaultToolbarWidth, TimeScrollView, usePanelDimensions, useTimeseriesMargins } from '../component-time-scroll-view'
+import { useRecordingSelectionTimeInitialization, useTimeRange } from '../context-recording-selection'
+import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts'
+import { convert1dDataSeries, use1dScalingMatrix } from '../util-point-projection'
 
 type Props = {
     startTimeSec: number

@@ -1,8 +1,8 @@
 import { runCalculationTaskAsync } from '@figurl/interface'
 import { FunctionComponent, useMemo } from 'react'
+import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts'
 import { RawTracesComponent } from '../view-raw-traces'
 import { LiveTracesViewData } from './LiveTracesViewData'
-import { TimeseriesLayoutOpts } from '../view-timeseries-graph/TimeseriesGraphView'
 
 type Props = {
     data: LiveTracesViewData

@@ -1,6 +1,6 @@
 import { getFileData } from '@figurl/interface'
 import { FunctionComponent, useMemo } from 'react'
-import { TimeseriesLayoutOpts } from '../view-timeseries-graph/TimeseriesGraphView'
+import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts'
 import RawTracesComponent from './RawTracesComponent'
 import { RawTracesViewData } from './RawTracesViewData'
 
