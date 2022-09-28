@@ -7,11 +7,14 @@ export type Annotation = {
     annotationId: string
     label: string
     timeSec: number
+    color?: string
 } | {
     type: 'time-interval'
     annotationId: string
     label: string
     timeIntervalSec: [number, number]
+    fillColor?: string
+    strokeColor?: string
 }
 
 export type AnnotationState = {

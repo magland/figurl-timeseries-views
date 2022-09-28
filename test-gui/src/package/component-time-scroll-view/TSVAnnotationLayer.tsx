@@ -29,21 +29,25 @@ const TSVAnnotationLayer = (props: TSVAnnotationLayerProps) => {
         context.clearRect(0, 0, context.canvas.width, context.canvas.height)
 
         for (let x of pixelTimeIntervalAnnotations) {
+            const aa = x.annotation
+            if (aa.type !== 'time-interval') throw Error('Unexpected')
             // at some point, we may want to do something with the annotation label
             const interval = x.pixelTimeInterval
             const t1 = interval[0]
             const t2 = interval[1]
-            context.fillStyle = 'rgb(245, 240, 200)'
-            context.strokeStyle = 'rgb(200, 200, 160)'
+            context.fillStyle = aa.fillColor || 'rgb(245, 240, 200)'
+            context.strokeStyle = aa.strokeColor || 'rgb(200, 200, 160)'
             context.lineWidth = 2
             context.fillRect(t1, margins.top, t2 - t1, context.canvas.height - margins.bottom - margins.top)
             context.strokeRect(t1, margins.top, t2 - t1, context.canvas.height - margins.bottom - margins.top)
         }
 
         for (let x of pixelTimepointAnnotations) {
+            const aa = x.annotation
+            if (aa.type !== 'timepoint') throw Error('Unexpected')
             // at some point, we may want to do something with the annotation label
             const t = x.pixelTime
-            context.strokeStyle = 'rgb(200, 250, 0)'
+            context.strokeStyle = aa.color || 'rgb(200, 250, 0)'
             context.lineWidth = 3.5
             context.beginPath()
             context.moveTo(t, margins.top)

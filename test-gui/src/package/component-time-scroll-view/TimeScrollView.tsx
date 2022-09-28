@@ -147,14 +147,21 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
 
     const {annotations} = useAnnotations()
     const annotationLayer = useMemo(() => {
-        const pixelTimepointAnnotations = annotations.filter(x => (x.type === 'timepoint')).map(x => {
+        const annotationsInRange = annotations.filter(x => (
+            x.type === 'timepoint' ? (
+                (timeRange[0] <= x.timeSec) && (x.timeSec <= timeRange[1])
+            ) : (
+                (timeRange[0] <= x.timeIntervalSec[1]) && (x.timeIntervalSec[0] <= timeRange[1])
+            )
+        ))
+        const pixelTimepointAnnotations = annotationsInRange.filter(x => (x.type === 'timepoint')).map(x => {
             if (x.type !== 'timepoint') throw Error('Unexpected')
             return {
                 pixelTime: convert1dDataSeries([x.timeSec], timeToPixelMatrix)[0],
                 annotation: x
             }
         })
-        const pixelTimeIntervalAnnotations = annotations.filter(x => (x.type === 'time-interval')).map(x => {
+        const pixelTimeIntervalAnnotations = annotationsInRange.filter(x => (x.type === 'time-interval')).map(x => {
             if (x.type !== 'time-interval') throw Error('Unexpected')
             return {
                 pixelTimeInterval: convert1dDataSeries(x.timeIntervalSec, timeToPixelMatrix) as [number, number],
