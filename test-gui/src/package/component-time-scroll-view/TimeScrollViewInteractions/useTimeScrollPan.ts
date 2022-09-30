@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef } from 'react';
-import { DebounceThrottleResolver, DebounceThrottleUpdater, useThrottler } from '../../util-rate-limiters';
+import { DebounceThrottleResolver, DebounceThrottleUpdater } from '../../util-rate-limiters';
+import { useDebouncer } from '../../util-rate-limiters/rateLimiters';
 
 export type PanState = {
     anchorTime?: number,
@@ -50,9 +51,9 @@ const panResolver: DebounceThrottleResolver<PanUpdateRefs, PanResolverProps> = (
 }
 
 
-export const useThrottledPan = (refs: PanUpdateRefs, panRecordingSelectionDeltaT: PanFn) => {
+export const useDebouncedPan = (refs: PanUpdateRefs, panRecordingSelectionDeltaT: PanFn) => {
     const resolverProps = useMemo(() => {return {panRecordingSelectionDeltaT}}, [panRecordingSelectionDeltaT])
-    const panHandler = useThrottler(setNextPanUpdate, panResolver, refs, resolverProps, 50)
+    const panHandler = useDebouncer(setNextPanUpdate, panResolver, refs, resolverProps, 50)
     return panHandler
 }
 
@@ -89,16 +90,16 @@ const isPanning = (ref: PanStateRef) => {
 const useTimeScrollPan = (divRef: React.MutableRefObject<HTMLDivElement | null>, panRecordingSelectionDeltaT: PanFn) => {
     const panStateRef = useRef<PanState>({})
     const refs = useMemo(() => {return {divRef, panStateRef}}, [divRef, panStateRef])
-    const { throttler, cancelThrottled } = useThrottledPan(refs, panRecordingSelectionDeltaT)
+    const { debouncer, cancelDebouncer } = useDebouncedPan(refs, panRecordingSelectionDeltaT)
     const resetAnchor = useCallback((mouseX: number, time: number) => {
-        resetPanStateAnchor(panStateRef, mouseX, time, cancelThrottled)
-    }, [panStateRef, cancelThrottled])
+        resetPanStateAnchor(panStateRef, mouseX, time, cancelDebouncer)
+    }, [panStateRef, cancelDebouncer])
     const startPan = useCallback((mouseX: number) => startPanning(panStateRef, mouseX), [panStateRef])
-    const clearPan = useCallback(() => clearPanState(panStateRef, cancelThrottled), [panStateRef, cancelThrottled])
+    const clearPan = useCallback(() => clearPanState(panStateRef, cancelDebouncer), [panStateRef, cancelDebouncer])
     const panning = useCallback(() => isPanning(panStateRef), [panStateRef])
 
     return {
-        setPanUpdate: throttler,
+        setPanUpdate: debouncer,
         resetAnchor,
         startPan,
         clearPan,
