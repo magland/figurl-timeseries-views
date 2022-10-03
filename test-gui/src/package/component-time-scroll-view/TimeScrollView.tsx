@@ -61,6 +61,7 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
     const timeRange = useMemo(() => (
         [visibleTimeStartSeconds, visibleTimeEndSeconds] as [number, number]
     ), [visibleTimeStartSeconds, visibleTimeEndSeconds])
+    const panelWidthSeconds = (visibleTimeEndSeconds ?? 0) - (visibleTimeStartSeconds ?? 0)
 
     const definedMargins = useDefinedMargins(margins)
     const toolbarWidth = hideToolbar ? 0 : DefaultToolbarWidth
@@ -77,7 +78,7 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
     const timeControlActions = useActionToolbar(optionalActions ?? {})
     useEffect(() => suppressWheelScroll(divRef), [divRef])
     const handleWheel = useTimeScrollZoom(divRef, zoomRecordingSelection)
-    const {handleMouseDown, handleMouseUp, handleMouseLeave, handleMouseMove} = useTimeScrollEventHandlers(definedMargins.left, panelWidth, divRef)
+    const {handleMouseDown, handleMouseUp, handleMouseLeave, handleMouseMove} = useTimeScrollEventHandlers(definedMargins.left, panelWidth, panelWidthSeconds, divRef)
 
     // TODO: It'd be nice to show some sort of visual indication of how much zoom has been requested,
 

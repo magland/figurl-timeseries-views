@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 
 export type RecordingSelection = {
     recordingStartTimeSeconds?: number
@@ -121,11 +121,11 @@ export const useTimeRange = (timestampOffset=0) => {
 
 export const useTimeFocus = () => {
     const {recordingSelection, recordingSelectionDispatch} = useRecordingSelection()
-    const timeForFraction = useMemo(() => ((fraction: number) => {
+    const timeForFraction = useCallback((fraction: number) => {
         const window = (recordingSelection.visibleTimeEndSeconds || 0) - (recordingSelection.visibleTimeStartSeconds || 0)
         const time = window * fraction
         return time + (recordingSelection.visibleTimeStartSeconds || 0)
-    }), [recordingSelection.visibleTimeStartSeconds, recordingSelection.visibleTimeEndSeconds])
+    }, [recordingSelection.visibleTimeStartSeconds, recordingSelection.visibleTimeEndSeconds])
     const setTimeFocus = useCallback((time: number, o: {autoScrollVisibleTimeRange?: boolean}={}) => {
         recordingSelectionDispatch({
             type: 'setFocusTime',
@@ -269,7 +269,7 @@ const panTimeHelper = (state: RecordingSelection, panDisplacementSeconds: number
         return state
     }
     const windowLength = state.visibleTimeEndSeconds - state.visibleTimeStartSeconds
-    let newStart = state.visibleTimeStartSeconds    
+    let newStart = state.visibleTimeStartSeconds
     let newEnd = state.visibleTimeEndSeconds
     if (panDisplacementSeconds > 0) {
         // panning forward. Just need to check that we don't run over the end of the recording.

@@ -1,5 +1,5 @@
-import { useTimeFocus, useTimeRange } from '../../context-recording-selection';
 import React, { useCallback, useMemo } from 'react';
+import { useTimeFocus, useTimeRange } from '../../context-recording-selection';
 import { clearDivFocus, divExists, setDivFocus } from './divRefHandling';
 import useTimeScrollPan, { PanUpdateProperties } from './useTimeScrollPan';
 
@@ -19,22 +19,21 @@ export const suppressWheelScroll = (divRef: React.MutableRefObject<HTMLDivElemen
 
 type DivRef = React.MutableRefObject<HTMLDivElement | null>
 
-type ClickReader = (e: React.MouseEvent) => { mouseX: number, fraction: number, time: number }
-const useClickReader = (leftMargin: number, panelWidthPx: number, timeForFraction: (fraction: number) => number): ClickReader => {
+type ClickReader = (e: React.MouseEvent) => { mouseX: number, fraction: number }
+const useClickReader = (leftMargin: number, panelWidthPx: number): ClickReader => {
     return useCallback((e: React.MouseEvent) => {
         const x = e.clientX - e.currentTarget.getBoundingClientRect().x - leftMargin
         const frac = Math.max(0, Math.min(1, x / panelWidthPx))
-        const time = timeForFraction(frac)
-        return { mouseX: x, fraction: frac, time: time }
-    }, [leftMargin, panelWidthPx, timeForFraction])
+        return { mouseX: x, fraction: frac }
+    }, [leftMargin, panelWidthPx])
 }
 
 
-const useMousedownHandler = (divRef: DivRef, clickReader: ClickReader, resetPanStateAnchor: (mouseX: number, time: number) => void) => {
+const useMousedownHandler = (divRef: DivRef, clickReader: ClickReader, resetPanStateAnchor: (mouseX: number) => void) => {
     const handler = useCallback((e: React.MouseEvent) => {
         if (divExists(divRef)) {
-            const {mouseX, time} = clickReader(e)
-            resetPanStateAnchor(mouseX, time)
+            const {mouseX} = clickReader(e)
+            resetPanStateAnchor(mouseX)
         }
     }, [divRef, clickReader, resetPanStateAnchor])
 
@@ -86,21 +85,22 @@ const useMouseMoveHandler = (divRef: DivRef, clickReader: ClickReader, startPan:
         if (!divExists(divRef)) {
             return
         }
-        const {mouseX, time} = clickReader(e)
+        const {mouseX} = clickReader(e)
         startPan(mouseX)
-        setPanUpdate({mouseX, time})
+        setPanUpdate({mouseX})
     }, [divRef, clickReader, startPan, setPanUpdate])
 
     return handler
 }
 
 
-const useTimeScrollEventHandlers = (leftMargin: number, panelWidth: number, divRef: React.MutableRefObject<HTMLDivElement | null>) => {
+const useTimeScrollEventHandlers = (leftMargin: number, panelWidth: number, panelWidthSeconds: number, divRef: React.MutableRefObject<HTMLDivElement | null>) => {
     const { panRecordingSelectionDeltaT } = useTimeRange()
-    const { setTimeFocusFraction, timeForFraction } = useTimeFocus()
+    const { setTimeFocusFraction } = useTimeFocus()
 
-    const clickReader = useClickReader(leftMargin, panelWidth, timeForFraction)
-    const {setPanUpdate, resetAnchor, startPan, clearPan, isPanning} = useTimeScrollPan(divRef, panRecordingSelectionDeltaT)
+    const clickReader = useClickReader(leftMargin, panelWidth)
+    const secondsPerPixel = useMemo(() => panelWidthSeconds / panelWidth, [panelWidthSeconds, panelWidth])
+    const {setPanUpdate, resetAnchor, startPan, clearPan, isPanning} = useTimeScrollPan(divRef, secondsPerPixel, panRecordingSelectionDeltaT)
     const handleClick = useClickHandler(divRef, clickReader, setTimeFocusFraction)
     const handleMouseDown = useMousedownHandler(divRef, clickReader, resetAnchor)
     const handleMouseUp = useMouseupHandler(divRef, isPanning, handleClick, clearPan)
