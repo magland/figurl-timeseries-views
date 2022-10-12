@@ -1,9 +1,9 @@
-import { MuiThemeProvider } from '@material-ui/core';
-import { defaultRecordingSelection, RecordingSelectionContext, recordingSelectionReducer, SetupAnnotations } from './package';
-import { getFigureData, SetupUrlState, startListeningToParent } from '@figurl/interface';
 import { useWindowDimensions } from '@figurl/core-utils';
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { getFigureData, SetupUrlState, startListeningToParent } from '@figurl/interface';
+import { MuiThemeProvider } from '@material-ui/core';
+import { useEffect, useMemo, useState } from 'react';
 import './localStyles.css';
+import { SetupAnnotations, SetupRecordingSelection } from './package';
 import theme from './theme';
 import View from './View';
 // import { SetupAnnotations } from 'libraries/context-annotations';
@@ -15,8 +15,6 @@ function App() {
   const [data, setData] = useState<any>()
   const [errorMessage, setErrorMessage] = useState<string>()
   const {width, height} = useWindowDimensions()
-
-  const [recordingSelection, recordingSelectionDispatch] = useReducer(recordingSelectionReducer, defaultRecordingSelection)
 
   useEffect(() => {
     if (queryParams.test === '1') {
@@ -75,7 +73,7 @@ function App() {
 
   return (
     <MuiThemeProvider theme={theme}>
-      <RecordingSelectionContext.Provider value={{recordingSelection, recordingSelectionDispatch}}>
+      <SetupRecordingSelection>
         {/* <UnitSelectionContext.Provider value={{unitSelection, unitSelectionDispatch}}> */}
           <SetupAnnotations>
             <SetupUrlState>
@@ -88,7 +86,7 @@ function App() {
             </SetupUrlState>
           </SetupAnnotations>
         {/* </UnitSelectionContext.Provider> */}
-      </RecordingSelectionContext.Provider>
+        </SetupRecordingSelection>
     </MuiThemeProvider>
   )
 }

@@ -255,8 +255,8 @@ const initializeRecordingSelectionTimes = (state: RecordingSelection, action: In
     const newState: RecordingSelection = {
         recordingStartTimeSeconds: newStart,
         recordingEndTimeSeconds: newEnd,
-        visibleTimeStartSeconds: newStart,
-        visibleTimeEndSeconds: newEnd,
+        visibleTimeStartSeconds: state.visibleTimeStartSeconds === undefined ? newStart : state.visibleTimeStartSeconds,
+        visibleTimeEndSeconds: state.visibleTimeEndSeconds === undefined ? newEnd : state.visibleTimeEndSeconds,
         selectedElectrodeIds: state.selectedElectrodeIds
     }
     selectionIsValid(newState) || console.warn(`Bad initialization value for recordingSelection: start ${action.recordingStartSec}, end ${action.recordingEndSec}`)
