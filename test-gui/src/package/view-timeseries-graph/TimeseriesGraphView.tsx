@@ -28,7 +28,7 @@ const panelSpacing = 4
 const emptyPanelSelection = new Set<number | string>()
 
 const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOpts, width, height}) => {
-    const {datasets, series, legendOpts, timeOffset} = data
+    const {datasets, series, legendOpts, timeOffset, yRange} = data
 
     const resolvedSeries = useMemo(() => (
         series.map(s => {
@@ -50,11 +50,11 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
     ), [resolvedSeries])
 
     const {minValue, maxValue} = useMemo(() => (
-        {
+        yRange ? ({minValue: yRange[0], maxValue: yRange[1]}) : {
             minValue: min(resolvedSeries.map(s => (min(s.y)))),
             maxValue: max(resolvedSeries.map(s => (max(s.y))))
         }
-    ), [resolvedSeries])
+    ), [yRange, resolvedSeries])
 
     // This component ignores timeOffset except in the following two hooks
     useRecordingSelectionTimeInitialization(minTime, maxTime, timeOffset || 0)

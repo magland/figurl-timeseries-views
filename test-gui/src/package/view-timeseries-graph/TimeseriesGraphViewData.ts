@@ -24,6 +24,7 @@ export type TimeseriesGraphViewData = {
     series: Series[]
     timeOffset?: number
     legendOpts?: LegendOpts
+    yRange?: [number, number]
 }
 
 export const isTimeseriesGraphViewData = (x: any): x is TimeseriesGraphViewData => {
@@ -43,6 +44,7 @@ export const isTimeseriesGraphViewData = (x: any): x is TimeseriesGraphViewData 
         timeOffset: optional(isNumber),
         legendOpts: optional((y: any) => validateObject(y, {
             location: isString
-        }))
+        })),
+        yRange: optional(isArrayOf(isNumber))
     }, {allowAdditionalFields: true})
 }
