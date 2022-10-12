@@ -1,4 +1,4 @@
-import { FunctionComponent, useCallback, useMemo } from 'react'
+import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
 import { DefaultToolbarWidth, TimeScrollView, TimeScrollViewPanel, usePanelDimensions, useProjectedYAxisTicks, useTimeseriesMargins, useYAxisTicks } from '../component-time-scroll-view'
 import { useRecordingSelectionTimeInitialization, useTimeRange } from '../context-recording-selection'
 import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts'
@@ -28,7 +28,7 @@ const panelSpacing = 4
 const emptyPanelSelection = new Set<number | string>()
 
 const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOpts, width, height}) => {
-    const {datasets, series, legendOpts, timeOffset, yRange} = data
+    const {datasets, series, legendOpts, timeOffset, yRange, gridlineOpts} = data
 
     const resolvedSeries = useMemo(() => (
         series.map(s => {
@@ -67,7 +67,10 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
     const toolbarWidth = timeseriesLayoutOpts?.hideToolbar ? 0 : DefaultToolbarWidth
     const { panelWidth, panelHeight } = usePanelDimensions(width - toolbarWidth, height, panelCount, panelSpacing, margins)
 
+    const [hideLegend, setHideLegend] = useState<boolean>(false)
+
     const paintLegend = useCallback((context: CanvasRenderingContext2D) => {
+        if (hideLegend) return
         let opts = legendOpts
         if (!opts) {
             opts = {location: 'northeast'} // for testing
@@ -121,7 +124,13 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
                 }
             }
         })
-    }, [legendOpts, series, panelWidth])
+    }, [legendOpts, series, panelWidth, hideLegend])
+
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'l') {
+            setHideLegend(v => (!v))
+        }
+    }, [])
 
     // We need to have the panelHeight before we can use it in the paint function.
     // By using a callback, we avoid having to complicate the props passed to the painting function; it doesn't make a big difference
@@ -248,6 +257,8 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
             selectedPanelKeys={emptyPanelSelection}
             timeseriesLayoutOpts={timeseriesLayoutOpts}
             yTickSet={yTickSet}
+            gridlineOpts={gridlineOpts}
+            onKeyDown={handleKeyDown}
             width={width}
             height={height}
         />

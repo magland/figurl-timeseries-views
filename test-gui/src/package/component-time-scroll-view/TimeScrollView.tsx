@@ -1,5 +1,5 @@
 import { Splitter } from '@figurl/core-views';
-import { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { DefaultToolbarWidth } from '../component-time-scroll-view';
 import { useAnnotations } from '../context-annotations';
 import { useTimeRange } from '../context-recording-selection';
@@ -41,6 +41,8 @@ type TimeScrollViewProps<T extends {[key: string]: any}> = {
     timeseriesLayoutOpts?: TimeseriesLayoutOpts
     yTickSet?: TickSet
     showYMinMaxLabels?: boolean
+    gridlineOpts?: {hideX: boolean, hideY: boolean}
+    onKeyDown?: (e: React.KeyboardEvent) => void
 }
 
 const emptyPanelSelection = new Set<number | string>()
@@ -53,7 +55,7 @@ const emptyPanelSelection = new Set<number | string>()
 // expects to consume, since the code will successfully infer that this is a FunctionComponent that
 // takes a TimeScrollViewProps.
 const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewProps<T>) => {
-    const { margins, panels, panelSpacing, selectedPanelKeys, width, height, optionalActions, timeseriesLayoutOpts, highlightSpans, yTickSet, showYMinMaxLabels } = props
+    const { margins, panels, panelSpacing, selectedPanelKeys, width, height, optionalActions, timeseriesLayoutOpts, highlightSpans, yTickSet, showYMinMaxLabels, gridlineOpts, onKeyDown } = props
     const { hideToolbar, hideTimeAxis } = timeseriesLayoutOpts || {}
     const divRef = useRef<HTMLDivElement | null>(null)
     
@@ -100,12 +102,13 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
                 timeRange={timeRange}
                 timeTicks={timeTicks}
                 yTickSet={yTickSet}
+                gridlineOpts={gridlineOpts}
                 margins={definedMargins}
                 hideTimeAxis={hideTimeAxis}
                 showYMinMaxLabels={showYMinMaxLabels}
             />)
     }, [effectiveWidth, height, panels, panelHeight, perPanelOffset, selectedPanelKeys,
-        timeRange, timeTicks, yTickSet, definedMargins, hideTimeAxis, showYMinMaxLabels])
+        timeRange, timeTicks, yTickSet, definedMargins, hideTimeAxis, showYMinMaxLabels, gridlineOpts])
 
     const mainLayer = useMemo(() => {
         return (
@@ -190,6 +193,8 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
                 onMouseUp={handleMouseUp}
                 onMouseMove={handleMouseMove}
                 onMouseOut={handleMouseLeave}
+                tabIndex={0}
+                onKeyDown={onKeyDown}
             >
                 {annotationLayer}
                 {axesLayer}
@@ -199,7 +204,7 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
             </div>
         )
     }, [style, handleWheel, handleMouseDown, handleMouseUp, handleMouseMove, handleMouseLeave,
-        annotationLayer, axesLayer, mainLayer, highlightLayer, cursorLayer])
+        annotationLayer, axesLayer, mainLayer, highlightLayer, cursorLayer, onKeyDown])
     
     if (hideToolbar) {
         return (

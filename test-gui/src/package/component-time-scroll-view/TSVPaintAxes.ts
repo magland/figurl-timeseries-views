@@ -7,21 +7,21 @@ const highlightedRowFillStyle = '#c5e1ff' // TODO: This should be standardized a
 
 export const paintAxes = <T extends {[key: string]: any}>(context: CanvasRenderingContext2D, props: TSVAxesLayerProps<T> & {'selectedPanelKeys': Set<number | string>, showYMinMaxLabels: boolean}) => {
     // I've left the timeRange in the props list since we will probably want to display something with it at some point
-    const {width, height, margins, panels, panelHeight, perPanelOffset, selectedPanelKeys, yTickSet, timeTicks, hideTimeAxis, showYMinMaxLabels} = props
+    const {width, height, margins, panels, panelHeight, perPanelOffset, selectedPanelKeys, yTickSet, timeTicks, hideTimeAxis, showYMinMaxLabels, gridlineOpts} = props
     context.clearRect(0, 0, context.canvas.width, context.canvas.height)
 
     const xAxisVerticalPosition = height - margins.bottom
-    paintTimeTicks(context, timeTicks, hideTimeAxis, xAxisVerticalPosition, margins.top)
+    paintTimeTicks(context, timeTicks, hideTimeAxis, xAxisVerticalPosition, margins.top, {hideGridlines: gridlineOpts?.hideX})
     if (!hideTimeAxis) {
         context.strokeStyle = 'black'
         drawLine(context, margins.left, xAxisVerticalPosition, width - margins.right, xAxisVerticalPosition)
     }
-    yTickSet && paintYTicks(context, yTickSet, xAxisVerticalPosition, margins.left, width - margins.right, margins.top, showYMinMaxLabels)
+    yTickSet && paintYTicks(context, yTickSet, xAxisVerticalPosition, margins.left, width - margins.right, margins.top, showYMinMaxLabels, {hideGridlines: gridlineOpts?.hideY})
     paintPanelHighlights(context, panels, selectedPanelKeys, margins.top, width, perPanelOffset, panelHeight)
     paintPanelLabels(context, panels, margins.left, margins.top, perPanelOffset, panelHeight)
 }
 
-const paintYTicks = (context: CanvasRenderingContext2D, tickSet: TickSet, xAxisYCoordinate: number, yAxisXCoordinate: number, plotRightPx: number, topMargin: number, showYMinMaxLabels: boolean) => {
+const paintYTicks = (context: CanvasRenderingContext2D, tickSet: TickSet, xAxisYCoordinate: number, yAxisXCoordinate: number, plotRightPx: number, topMargin: number, showYMinMaxLabels: boolean, o: {hideGridlines?: boolean}) => {
     const labelOffsetFromGridline = 2
     const gridlineLeftEdge = yAxisXCoordinate - 5
     const labelRightEdge = gridlineLeftEdge - labelOffsetFromGridline
@@ -47,12 +47,13 @@ const paintYTicks = (context: CanvasRenderingContext2D, tickSet: TickSet, xAxisY
         const pixelValueWithMargin = tick.pixelValue + topMargin
         context.strokeStyle = tick.isMajor ? 'gray' : 'lightgray'
         context.fillStyle = tick.isMajor ? 'black' : 'gray'
-        drawLine(context, gridlineLeftEdge, pixelValueWithMargin, plotRightPx, pixelValueWithMargin)
+        const rightPixel = !o.hideGridlines ? plotRightPx : yAxisXCoordinate
+        drawLine(context, gridlineLeftEdge, pixelValueWithMargin, rightPixel, pixelValueWithMargin)
         context.fillText(tick.label, labelRightEdge, pixelValueWithMargin) // TODO: Add a max width thingy
     })
 }
 
-const paintTimeTicks = (context: CanvasRenderingContext2D, timeTicks: TimeTick[], hideTimeAxis: boolean | undefined, xAxisPixelHeight: number, plotTopPixelHeight: number) => {
+const paintTimeTicks = (context: CanvasRenderingContext2D, timeTicks: TimeTick[], hideTimeAxis: boolean | undefined, xAxisPixelHeight: number, plotTopPixelHeight: number, o: {hideGridlines?: boolean}) => {
     if (!timeTicks || timeTicks.length === 0) return
     // Grid line length: if time axis is shown, grid lines extends 5 pixels below it. Otherwise they should stop at the edge of the plotting space.
     const labelOffsetFromGridline = 2
@@ -61,7 +62,8 @@ const paintTimeTicks = (context: CanvasRenderingContext2D, timeTicks: TimeTick[]
     context.textBaseline = 'top'
     timeTicks.forEach(tick => {
         context.strokeStyle = tick.major ? 'gray' : 'lightgray'
-        drawLine(context, tick.pixelXposition, gridlineBottomEdge, tick.pixelXposition, plotTopPixelHeight)
+        const topPixel = !o.hideGridlines ? plotTopPixelHeight : xAxisPixelHeight
+        drawLine(context, tick.pixelXposition, gridlineBottomEdge, tick.pixelXposition, topPixel)
         if (!hideTimeAxis) {
             context.fillStyle = tick.major ? 'black' : 'gray'
             context.fillText(tick.label, tick.pixelXposition, gridlineBottomEdge + labelOffsetFromGridline)

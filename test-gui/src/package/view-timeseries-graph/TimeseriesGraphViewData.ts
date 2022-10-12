@@ -1,8 +1,13 @@
-import { isEqualTo, isNumber, optional, validateObject, isArrayOf } from "@figurl/core-utils"
+import { isEqualTo, isNumber, optional, validateObject, isArrayOf, isBoolean } from "@figurl/core-utils"
 import { isString } from "mathjs"
 
 type LegendOpts = {
     location: 'northwest' | 'northeast'
+}
+
+type GridlineOpts = {
+    hideX: boolean
+    hideY: boolean
 }
 
 type Dataset = {
@@ -25,6 +30,7 @@ export type TimeseriesGraphViewData = {
     timeOffset?: number
     legendOpts?: LegendOpts
     yRange?: [number, number]
+    gridlineOpts?: GridlineOpts
 }
 
 export const isTimeseriesGraphViewData = (x: any): x is TimeseriesGraphViewData => {
@@ -45,6 +51,10 @@ export const isTimeseriesGraphViewData = (x: any): x is TimeseriesGraphViewData 
         legendOpts: optional((y: any) => validateObject(y, {
             location: isString
         })),
-        yRange: optional(isArrayOf(isNumber))
+        yRange: optional(isArrayOf(isNumber)),
+        gridlineOpts: optional((y: any) => validateObject(y, {
+            hideX: isBoolean,
+            hideY: isBoolean
+        }))
     }, {allowAdditionalFields: true})
 }
