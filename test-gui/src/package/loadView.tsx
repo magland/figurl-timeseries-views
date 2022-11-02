@@ -2,6 +2,7 @@ import { ViewComponentProps } from "@figurl/core-views"
 import { FunctionComponent } from "react"
 import { AnnotationsView, isAnnotationsViewData } from "./view-annotations"
 import { isLiveTracesViewData, LiveTracesView } from "./view-live-traces"
+import { isPerformanceTestViewData, PerformanceTestView } from "./view-performance-test"
 import { isRawTracesViewData, RawTracesView } from "./view-raw-traces"
 import { isTimeseriesGraphViewData, TimeseriesGraphView } from "./view-timeseries-graph"
 
@@ -18,6 +19,9 @@ const loadView = (o: {data: any, width: number, height: number, opts: any, ViewC
     }
     else if (isTimeseriesGraphViewData(data)) {
         return <TimeseriesGraphView data={data} width={width} height={height} />
+    }
+    else if (isPerformanceTestViewData(data)) {
+        return <PerformanceTestView data={data} width={width} height={height} />
     }
     else return undefined
 }
