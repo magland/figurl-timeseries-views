@@ -4,14 +4,6 @@ import { TimeScrollView, TimeScrollViewPanel, usePanelDimensions, useRecordingSe
 import { convert1dDataSeries, use1dScalingMatrix } from "../util-point-projection"
 import { PerformanceTestViewData } from "./PerformanceTestViewData"
 
-const worker = new Worker(new URL('./worker.js', import.meta.url));
-worker.onmessage = (e: MessageEvent) => {
-    console.log('Message received from worker', e.data);
-}
-setTimeout(() => {
-    worker.postMessage({test: 'message'})
-}, 2000)
-
 // https://figurl.org/f?v=http://localhost:3000&d=sha1://737495c5f42fe3e11158c15c703a7ee0d6ebb20e&label=Performance%20test
 
 type Props = {
