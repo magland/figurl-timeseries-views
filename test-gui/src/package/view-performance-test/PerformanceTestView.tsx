@@ -1,6 +1,6 @@
 import { colorForUnitId } from "@figurl/core-utils"
 import { FunctionComponent, KeyboardEventHandler, useCallback, useEffect, useMemo, useState } from "react"
-import { TimeScrollView, TimeScrollViewPanel, usePanelDimensions, useRecordingSelectionTimeInitialization, useTimeRange, useTimeseriesMargins } from ".."
+import { TimeScrollView, TimeScrollViewPanel, usePanelDimensions, useTimeseriesSelectionInitialization, useTimeRange, useTimeseriesMargins } from ".."
 import { convert1dDataSeries, use1dScalingMatrix } from "../util-point-projection"
 import { PerformanceTestViewData } from "./PerformanceTestViewData"
 
@@ -59,16 +59,16 @@ const useImageData = ({filteredColors, pixelTimes, margins, numSquiggles, panelW
 }
 
 const PerformanceTestView: FunctionComponent<Props> = ({data, width, height}) => {
-    useRecordingSelectionTimeInitialization(0, N / samplingFrequency)
+    useTimeseriesSelectionInitialization(0, N / samplingFrequency)
     const [mode, setMode] = useState<number>(1)
     const [numSquiggles, setNumSqiggles] = useState<number>(10)
-    const {visibleTimeStartSeconds, visibleTimeEndSeconds} = useTimeRange()
+    const {visibleStartTimeSec, visibleEndTimeSec} = useTimeRange()
     const margins = useTimeseriesMargins(undefined)
     const toolbarWidth = 0
     const panelCount = 1
     const panelSpacing = 0
     const { panelWidth, panelHeight } = usePanelDimensions(width - toolbarWidth, height, panelCount, panelSpacing, margins)
-    const timeToPixelMatrix = use1dScalingMatrix(panelWidth, visibleTimeStartSeconds, visibleTimeEndSeconds)
+    const timeToPixelMatrix = use1dScalingMatrix(panelWidth, visibleStartTimeSec, visibleEndTimeSec)
     const primes = usePrimes(N)
     const times = useMemo(() => {
         if (!primes) return []
@@ -78,9 +78,9 @@ const PerformanceTestView: FunctionComponent<Props> = ({data, width, height}) =>
         times.map((t, i) => (colorForUnitId(i)))
     ), [times])
     const {filteredTimes, filteredColors} = useMemo(() => ({
-        filteredTimes: times.filter(t => ((visibleTimeStartSeconds !== undefined) && (visibleTimeEndSeconds !== undefined) && (visibleTimeStartSeconds <= t) && (t <= visibleTimeEndSeconds))),
-        filteredColors: colors.filter((c, i) => ((visibleTimeStartSeconds !== undefined) && (visibleTimeEndSeconds !== undefined) && (visibleTimeStartSeconds <= times[i]) && (times[i] <= visibleTimeEndSeconds))),
-    }), [times, colors, visibleTimeStartSeconds, visibleTimeEndSeconds])
+        filteredTimes: times.filter(t => ((visibleStartTimeSec !== undefined) && (visibleEndTimeSec !== undefined) && (visibleStartTimeSec <= t) && (t <= visibleEndTimeSec))),
+        filteredColors: colors.filter((c, i) => ((visibleStartTimeSec !== undefined) && (visibleEndTimeSec !== undefined) && (visibleStartTimeSec <= times[i]) && (times[i] <= visibleEndTimeSec))),
+    }), [times, colors, visibleStartTimeSec, visibleEndTimeSec])
     const pixelTimes = useMemo(() => (
         convert1dDataSeries(filteredTimes, timeToPixelMatrix)
     ), [timeToPixelMatrix, filteredTimes])

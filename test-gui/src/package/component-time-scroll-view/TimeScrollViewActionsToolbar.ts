@@ -1,4 +1,4 @@
-import { useTimeRange } from '../context-recording-selection';
+import { useTimeRange } from '../context-timeseries-selection';
 import { useMemo } from 'react';
 import { TimeWidgetToolbarEntries } from '../component-time-scroll-view';
 import { Divider, ToolbarItem } from '../ViewToolbar';
@@ -10,20 +10,20 @@ export type OptionalToolbarActions = {
 
 const useActionToolbar = (props: OptionalToolbarActions) => {
     const { aboveDefault, belowDefault } = props
-    const { zoomRecordingSelection, panRecordingSelection } = useTimeRange()
+    const { zoomTimeseriesSelection, panTimeseriesSelection } = useTimeRange()
 
     const timeControlActions = useMemo(() => {
-        if (!zoomRecordingSelection || !panRecordingSelection) return []
+        if (!zoomTimeseriesSelection || !panTimeseriesSelection) return []
         const preToolbarEntries = aboveDefault ? [...aboveDefault, Divider] : []
         const postToolbarEntries = belowDefault ? [Divider, ...belowDefault] : []
-        const timeControls = TimeWidgetToolbarEntries({zoomRecordingSelection, panRecordingSelection})
+        const timeControls = TimeWidgetToolbarEntries({zoomTimeseriesSelection, panTimeseriesSelection})
         const actions: ToolbarItem[] = [
             ...preToolbarEntries,
             ...timeControls,
             ...postToolbarEntries
         ]
         return actions
-    }, [zoomRecordingSelection, panRecordingSelection, aboveDefault, belowDefault])
+    }, [zoomTimeseriesSelection, panTimeseriesSelection, aboveDefault, belowDefault])
 
     return timeControlActions
 }

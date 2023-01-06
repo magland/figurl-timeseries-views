@@ -3,7 +3,7 @@ import { getFigureData, SetupUrlState, startListeningToParent } from '@figurl/in
 import { MuiThemeProvider } from '@material-ui/core';
 import { useEffect, useMemo, useState } from 'react';
 import './localStyles.css';
-import { SetupAnnotations, SetupRecordingSelection } from './package';
+import { SetupAnnotations, SetupTimeseriesSelection } from './package';
 import theme from './theme';
 import View from './View';
 // import { SetupAnnotations } from 'libraries/context-annotations';
@@ -73,7 +73,7 @@ function App() {
 
   return (
     <MuiThemeProvider theme={theme}>
-      <SetupRecordingSelection>
+      <SetupTimeseriesSelection>
         {/* <UnitSelectionContext.Provider value={{unitSelection, unitSelectionDispatch}}> */}
           <SetupAnnotations>
             <SetupUrlState>
@@ -86,7 +86,7 @@ function App() {
             </SetupUrlState>
           </SetupAnnotations>
         {/* </UnitSelectionContext.Provider> */}
-        </SetupRecordingSelection>
+        </SetupTimeseriesSelection>
     </MuiThemeProvider>
   )
 }

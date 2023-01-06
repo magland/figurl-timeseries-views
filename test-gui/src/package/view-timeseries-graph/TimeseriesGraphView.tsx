@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
 import { DefaultToolbarWidth, TimeScrollView, TimeScrollViewPanel, usePanelDimensions, useProjectedYAxisTicks, useTimeseriesMargins, useYAxisTicks } from '../component-time-scroll-view'
-import { useRecordingSelectionTimeInitialization, useTimeRange } from '../context-recording-selection'
+import { useTimeseriesSelectionInitialization, useTimeRange } from '../context-timeseries-selection'
 import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts'
 import { convert2dDataSeries, getYAxisPixelZero, use2dScalingMatrix } from '../util-point-projection'
 import { TimeseriesGraphViewData } from './TimeseriesGraphViewData'
@@ -57,8 +57,8 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
     ), [yRange, resolvedSeries])
 
     // This component ignores timeOffset except in the following two hooks
-    useRecordingSelectionTimeInitialization(minTime, maxTime, timeOffset || 0)
-    const {visibleTimeStartSeconds, visibleTimeEndSeconds } = useTimeRange(timeOffset || 0) // timeOffset is subtracted from start and end after getting from the global state
+    useTimeseriesSelectionInitialization(minTime, maxTime, timeOffset || 0)
+    const {visibleStartTimeSec, visibleEndTimeSec } = useTimeRange(timeOffset || 0) // timeOffset is subtracted from start and end after getting from the global state
 
     const margins = useTimeseriesMargins(timeseriesLayoutOpts)
 
@@ -181,11 +181,11 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
 
     const plotSeries = useMemo(() => {
         const plotSeries: {type: string, times: number[], values: number[], attributes: {[key: string]: any}}[] = []
-        if ((visibleTimeStartSeconds === undefined) || (visibleTimeEndSeconds === undefined)) {
+        if ((visibleStartTimeSec === undefined) || (visibleEndTimeSec === undefined)) {
             return plotSeries
         }
         resolvedSeries.forEach(rs => {
-            let filteredTimeIndices: number[] = rs.t.flatMap((t: number, ii: number) => (visibleTimeStartSeconds <= t) && (t <= visibleTimeEndSeconds) ? ii : [])
+            let filteredTimeIndices: number[] = rs.t.flatMap((t: number, ii: number) => (visibleStartTimeSec <= t) && (t <= visibleEndTimeSec) ? ii : [])
 
             // need to prepend an index before and append an index after so that lines get rendered properly
             if ((filteredTimeIndices[0] || 0) > 0) {
@@ -206,14 +206,14 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
             })
         })
         return plotSeries
-    }, [visibleTimeStartSeconds, visibleTimeEndSeconds, resolvedSeries])
+    }, [visibleStartTimeSec, visibleEndTimeSec, resolvedSeries])
 
     const pixelTransform = use2dScalingMatrix({
         totalPixelWidth: panelWidth,
         totalPixelHeight: panelHeight,
         // margins have already been accounted for since we use a panel-oriented scaling function here
-        dataXMin: visibleTimeStartSeconds,
-        dataXMax: visibleTimeEndSeconds,
+        dataXMin: visibleStartTimeSec,
+        dataXMax: visibleEndTimeSec,
         dataYMin: minValue,
         dataYMax: maxValue
     })

@@ -1,6 +1,6 @@
 import { Matrix } from 'mathjs';
 import { useMemo } from 'react';
-import { useTimeFocus } from '../context-recording-selection';
+import { useTimeseriesSelection } from '../context-timeseries-selection';
 import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts';
 import { convert1dDataSeries } from '../util-point-projection';
 
@@ -74,7 +74,7 @@ export const usePanelDimensions = (width: number, height: number, panelCount: nu
 }
 
 export const useFocusTimeInPixels = (timeToPixelMatrix: Matrix) => {
-    const {focusTime, focusTimeInterval, focusTimeIsVisible} = useTimeFocus()
+    const {focusTime, focusTimeInterval, focusTimeIsVisible} = useTimeseriesSelection()
     const pixelTime = useMemo(() => {
         return {
             focusTimeInPixels: focusTime !== undefined && focusTimeIsVisible ? convert1dDataSeries([focusTime], timeToPixelMatrix)[0] : undefined,

@@ -1,25 +1,25 @@
-import { PanDirection, ZoomDirection } from '../context-recording-selection'
+import { PanDirection, ZoomDirection } from '../context-timeseries-selection'
 import { ToolbarItem } from '../ViewToolbar'
 import { FaArrowLeft, FaArrowRight, FaSearchMinus, FaSearchPlus } from 'react-icons/fa'
 
 interface TimeWidgetToolbarProps {
-    zoomRecordingSelection: (direction: ZoomDirection, factor?: number) => void
-    panRecordingSelection: (direction: PanDirection, pct?: number) => void
+    zoomTimeseriesSelection: (direction: ZoomDirection, factor?: number) => void
+    panTimeseriesSelection: (direction: PanDirection, pct?: number) => void
 }
 
 export const DefaultToolbarWidth = 36
 
 
 const TimeWidgetToolbarEntries = (props: TimeWidgetToolbarProps): ToolbarItem[] => {
-    const { zoomRecordingSelection, panRecordingSelection } = props
+    const { zoomTimeseriesSelection, panTimeseriesSelection } = props
 
-    const handleZoomTimeIn = () => zoomRecordingSelection('in')
+    const handleZoomTimeIn = () => zoomTimeseriesSelection('in')
 
-    const handleZoomTimeOut = () => zoomRecordingSelection('out')
+    const handleZoomTimeOut = () => zoomTimeseriesSelection('out')
 
-    const handleShiftTimeLeft = () => panRecordingSelection('back')
+    const handleShiftTimeLeft = () => panTimeseriesSelection('back')
 
-    const handleShiftTimeRight = () => panRecordingSelection('forward')
+    const handleShiftTimeRight = () => panTimeseriesSelection('forward')
 
     return [
         {

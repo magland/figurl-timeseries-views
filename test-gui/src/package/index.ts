@@ -1,6 +1,6 @@
 export * from './component-time-scroll-view'
 export * from './context-annotations'
-export * from './context-recording-selection'
+export * from './context-timeseries-selection'
 export { default as loadView } from './loadView'
 export * from './types/TimeseriesLayoutOpts'
 export * from './view-annotations'

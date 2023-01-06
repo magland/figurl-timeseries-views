@@ -2,7 +2,7 @@ import { colorForUnitId, useFetchCache } from '@figurl/core-utils'
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { AmplitudeScaleToolbarEntries } from '../AmplitudeScaleToolbarEntries'
 import { DefaultToolbarWidth, TimeScrollView, usePanelDimensions, useTimeseriesMargins } from '../component-time-scroll-view'
-import { useRecordingSelectionTimeInitialization, useTimeRange } from '../context-recording-selection'
+import { useTimeseriesSelectionInitialization, useTimeRange } from '../context-timeseries-selection'
 import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts'
 import { convert1dDataSeries, use1dScalingMatrix } from '../util-point-projection'
 
@@ -42,11 +42,11 @@ type FetchedChunk = {
 const RawTracesComponent: FunctionComponent<Props> = ({startTimeSec, samplingFrequency, numFrames, channelIds, chunkSize, getTracesData, timeseriesLayoutOpts, width, height}) => {
     const numSamples = numFrames
     const endTimeSec = startTimeSec + numSamples / samplingFrequency
-    useRecordingSelectionTimeInitialization(startTimeSec, endTimeSec)
+    useTimeseriesSelectionInitialization(startTimeSec, endTimeSec)
     const [ampScaleFactor, setAmpScaleFactor] = useState<number>(1)
     const [spentALotOfTimeAtThisView, setSpentALotOfTimeAtThisView] = useState(false)
 
-    const { visibleTimeStartSeconds, visibleTimeEndSeconds } = useTimeRange()
+    const { visibleStartTimeSec, visibleEndTimeSec } = useTimeRange()
 
     const [isDataLoading, setDataLoading] = useState<boolean>(false)
 
@@ -60,9 +60,9 @@ const RawTracesComponent: FunctionComponent<Props> = ({startTimeSec, samplingFre
     const maxNumPoints = 5e7 / numChannels
 
     const zoomInRequired = useMemo(() => {
-        const numPoints = ((visibleTimeEndSeconds || 0) - (visibleTimeStartSeconds || 0)) * samplingFrequency
+        const numPoints = ((visibleEndTimeSec || 0) - (visibleStartTimeSec || 0)) * samplingFrequency
         return numPoints > maxNumPoints
-    }, [visibleTimeStartSeconds, visibleTimeEndSeconds, samplingFrequency, maxNumPoints])
+    }, [visibleStartTimeSec, visibleEndTimeSec, samplingFrequency, maxNumPoints])
 
     useEffect(() => {
         setSpentALotOfTimeAtThisView(false)
@@ -72,7 +72,7 @@ const RawTracesComponent: FunctionComponent<Props> = ({startTimeSec, samplingFre
             setSpentALotOfTimeAtThisView(true)
         }, 500)
         return () => {canceled = true}
-    }, [visibleTimeStartSeconds, visibleTimeEndSeconds, ampScaleFactor])
+    }, [visibleStartTimeSec, visibleEndTimeSec, ampScaleFactor])
 
     const fetchChunk = useMemo(() => (
         async (q: FetchChunkQuery): Promise<FetchedChunk> => {
@@ -185,7 +185,7 @@ const RawTracesComponent: FunctionComponent<Props> = ({startTimeSec, samplingFre
     }, [])
 
     // Here we convert the native (time-based spike registry) data to pixel dimensions based on the per-panel allocated space.
-    const timeToPixelMatrix = use1dScalingMatrix(panelWidth, visibleTimeStartSeconds, visibleTimeEndSeconds)
+    const timeToPixelMatrix = use1dScalingMatrix(panelWidth, visibleStartTimeSec, visibleEndTimeSec)
 
     const getTraceValues = useMemo(() => (
         (ds: number, ich: number, iStart: number, iEnd: number) => {
@@ -238,15 +238,15 @@ const RawTracesComponent: FunctionComponent<Props> = ({startTimeSec, samplingFre
             paint: (context: CanvasRenderingContext2D, props: PanelProps) => void
         }[] = []
 
-        if (visibleTimeStartSeconds === undefined) return pixelPanels
-        if (visibleTimeEndSeconds === undefined) return  pixelPanels
+        if (visibleStartTimeSec === undefined) return pixelPanels
+        if (visibleEndTimeSec === undefined) return  pixelPanels
         if (valueRanges === undefined) {
             setDataLoading(true)
             return pixelPanels
         }
 
-        let i1 = Math.floor((visibleTimeStartSeconds - startTimeSec) * samplingFrequency)
-        let i2 = Math.ceil((visibleTimeEndSeconds - startTimeSec) * samplingFrequency)
+        let i1 = Math.floor((visibleStartTimeSec - startTimeSec) * samplingFrequency)
+        let i2 = Math.ceil((visibleEndTimeSec - startTimeSec) * samplingFrequency)
         i1 = Math.max(0, i1)
         i2 = Math.min(numFrames - 1, i2)
 
@@ -303,12 +303,12 @@ const RawTracesComponent: FunctionComponent<Props> = ({startTimeSec, samplingFre
         setDataLoading(everythingNaN)
 
         return pixelPanels
-    }, [getTraceValues, paintPanel, samplingFrequency, startTimeSec, timeToPixelMatrix, visibleTimeStartSeconds, visibleTimeEndSeconds, panelHeight, valueRanges, ampScaleFactor, numChannels, numFrames, chunkSize, width, spentALotOfTimeAtThisView, zoomInRequired, paintZoomInRequired])
+    }, [getTraceValues, paintPanel, samplingFrequency, startTimeSec, timeToPixelMatrix, visibleStartTimeSec, visibleEndTimeSec, panelHeight, valueRanges, ampScaleFactor, numChannels, numFrames, chunkSize, width, spentALotOfTimeAtThisView, zoomInRequired, paintZoomInRequired])
 
     const scalingActions = useMemo(() => AmplitudeScaleToolbarEntries({ampScaleFactor, setAmpScaleFactor}), [ampScaleFactor])
     const optionalActions = useMemo(() => { return { aboveDefault: scalingActions}}, [scalingActions])
 
-    return visibleTimeStartSeconds === undefined
+    return visibleStartTimeSec === undefined
     ? (<div>Loading...</div>)
     : (
         <div style={{position: 'absolute', left: 0, top: 0, width, height}}>

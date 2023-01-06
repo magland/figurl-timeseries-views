@@ -3,12 +3,12 @@ import { Hyperlink } from '@figurl/core-views';
 import { NiceTable } from '@figurl/core-views';
 import { NiceTableColumn, NiceTableRow } from '@figurl/core-views';
 import { useAnnotations } from '../context-annotations';
-import { useRecordingSelection } from '../context-recording-selection';
 import { useUrlState } from '@figurl/interface';
 import { storeFileData } from '@figurl/interface';
-import { FunctionComponent, useCallback, useMemo, useState } from 'react';
+import { FunctionComponent, useCallback, useContext, useMemo, useState } from 'react';
 import { AnnotationsViewData } from './AnnotationsViewData';
 import EditableTextField from './EditableTextField';
+import { TimeseriesSelectionContext } from '../context-timeseries-selection';
 
 type Props = {
     data: AnnotationsViewData
@@ -39,8 +39,8 @@ const timeIntervalColumns: NiceTableColumn[] = [
 ]
 
 const AnnotationsView: FunctionComponent<Props> = ({data, width, height}) => {
-    const {recordingSelection, recordingSelectionDispatch} = useRecordingSelection()
-    const {focusTimeSeconds, focusTimeIntervalSeconds} = recordingSelection
+    const {timeseriesSelection, timeseriesSelectionDispatch} = useContext(TimeseriesSelectionContext)
+    const {currentTimeSec, currentTimeIntervalSec} = timeseriesSelection
     const {annotations, addAnnotation, removeAnnotation, setAnnotationLabel} = useAnnotations()
     const [saveEnabled, setSaveEnabled] = useState(true)
 
@@ -54,12 +54,12 @@ const AnnotationsView: FunctionComponent<Props> = ({data, width, height}) => {
                         element: <EditableTextField onChange={newLabel => setAnnotationLabel(x.annotationId, newLabel)} value={x.label} />
                     },
                     time: {
-                        element: <Hyperlink onClick={() => recordingSelectionDispatch({type: 'setFocusTime', focusTimeSec: x.timeSec, autoScrollVisibleTimeRange: true})}>{x.timeSec}</Hyperlink>
+                        element: <Hyperlink onClick={() => timeseriesSelectionDispatch({type: 'setFocusTime', focusTimeSec: x.timeSec, autoScrollVisibleTimeRange: true})}>{x.timeSec}</Hyperlink>
                     }
                 }
             }
         })
-    }, [annotations, recordingSelectionDispatch, setAnnotationLabel])
+    }, [annotations, timeseriesSelectionDispatch, setAnnotationLabel])
 
     const timeIntervalRows: NiceTableRow[] = useMemo(() => {
         return annotations.filter(a => (a.type === 'time-interval')).map((x, i) => {
@@ -71,20 +71,20 @@ const AnnotationsView: FunctionComponent<Props> = ({data, width, height}) => {
                         element: <EditableTextField onChange={newLabel => setAnnotationLabel(x.annotationId, newLabel)} value={x.label} />
                     },
                     interval: {
-                        element: <Hyperlink onClick={() => recordingSelectionDispatch({type: 'setFocusTimeInterval', focusTimeIntervalSec: x.timeIntervalSec, autoScrollVisibleTimeRange: true})}>{formatTimeInterval(x.timeIntervalSec)}</Hyperlink>
+                        element: <Hyperlink onClick={() => timeseriesSelectionDispatch({type: 'setFocusTimeInterval', focusTimeIntervalSec: x.timeIntervalSec, autoScrollVisibleTimeRange: true})}>{formatTimeInterval(x.timeIntervalSec)}</Hyperlink>
                     }
                 }
             }
         })
-    }, [annotations, recordingSelectionDispatch, setAnnotationLabel])
+    }, [annotations, timeseriesSelectionDispatch, setAnnotationLabel])
 
     const handleAddTimepoint = useCallback(() => {
-        focusTimeSeconds !== undefined && addAnnotation({type: 'timepoint', annotationId: '', label: ``, timeSec: focusTimeSeconds})
-    }, [focusTimeSeconds, addAnnotation])
+        currentTimeSec !== undefined && addAnnotation({type: 'timepoint', annotationId: '', label: ``, timeSec: currentTimeSec})
+    }, [currentTimeSec, addAnnotation])
 
     const handleAddTimeInterval = useCallback(() => {
-        focusTimeIntervalSeconds !== undefined && addAnnotation({type: 'time-interval', annotationId: '', label: ``, timeIntervalSec: focusTimeIntervalSeconds})
-    }, [focusTimeIntervalSeconds, addAnnotation])
+        currentTimeIntervalSec !== undefined && addAnnotation({type: 'time-interval', annotationId: '', label: ``, timeIntervalSec: currentTimeIntervalSec})
+    }, [currentTimeIntervalSec, addAnnotation])
 
     const handleDelete = useCallback((annotationId: string) => {
         removeAnnotation(annotationId)
@@ -112,8 +112,8 @@ const AnnotationsView: FunctionComponent<Props> = ({data, width, height}) => {
             <hr />
 
             <h4>Timepoints</h4>
-            Selected (sec): {focusTimeSeconds !== undefined ? focusTimeSeconds.toFixed(7) : 'undefined'}
-            <Button disabled={focusTimeSeconds === undefined} onClick={handleAddTimepoint}>Add timepoint</Button>
+            Selected (sec): {currentTimeSec !== undefined ? currentTimeSec.toFixed(7) : 'undefined'}
+            <Button disabled={currentTimeSec === undefined} onClick={handleAddTimepoint}>Add timepoint</Button>
             <div style={{overflowY: 'auto', height: 160}}>
                 <NiceTable
                     rows={timepointRows}
@@ -125,8 +125,8 @@ const AnnotationsView: FunctionComponent<Props> = ({data, width, height}) => {
 
             <h4>Time intervals</h4>
             <pre>(Use shift+click)</pre>
-            Selected (sec): {focusTimeIntervalSeconds !== undefined ? formatTimeInterval(focusTimeIntervalSeconds) : 'undefined'}
-            <Button disabled={focusTimeIntervalSeconds === undefined} onClick={handleAddTimeInterval}>Add time interval</Button>
+            Selected (sec): {currentTimeIntervalSec !== undefined ? formatTimeInterval(currentTimeIntervalSec) : 'undefined'}
+            <Button disabled={currentTimeIntervalSec === undefined} onClick={handleAddTimeInterval}>Add time interval</Button>
             <div style={{overflowY: 'auto', height: 160}}>
                 <NiceTable
                     rows={timeIntervalRows}

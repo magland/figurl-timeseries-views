@@ -29,10 +29,10 @@ export type PixelHighlightSpanSet = {
     return [finalStarts, finalEnds]
 }
 
-export const filterAndProjectHighlightSpans = (highlightIntervals: HighlightIntervalSet[] | undefined, visibleTimeStartSeconds: number | undefined, visibleTimeEndSeconds: number | undefined, timeAxisTransform: Matrix) => {
+export const filterAndProjectHighlightSpans = (highlightIntervals: HighlightIntervalSet[] | undefined, visibleStartTimeSec: number | undefined, visibleEndTimeSec: number | undefined, timeAxisTransform: Matrix) => {
     if (!highlightIntervals || highlightIntervals.length === 0) return []
     const highlightSpans = highlightIntervals.map(spanSet => {
-        const filteredSpanSet = filterTimeRanges(spanSet.intervalStarts, spanSet.intervalEnds, visibleTimeStartSeconds, visibleTimeEndSeconds)
+        const filteredSpanSet = filterTimeRanges(spanSet.intervalStarts, spanSet.intervalEnds, visibleStartTimeSec, visibleEndTimeSec)
         const pixelSpanStartsAndWidths = usePointWidthsFromIntervals(timeAxisTransform, filteredSpanSet)
         const pixelSpans = pixelSpanStartsAndWidths[0].map((start, index) => {return {start, width: pixelSpanStartsAndWidths[1][index]} as PixelSpan})
         // TODO: something with the color if it were provided which we don't support here

@@ -23,7 +23,7 @@ type PanUpdateRefs = {
 type PanFn = (deltaT: number) => void
 type PanResolverProps = {
     secondsPerPixel: number,
-    panRecordingSelectionDeltaT: PanFn
+    panTimeseriesSelectionDeltaT: PanFn
 }
 
 
@@ -40,19 +40,19 @@ const setNextPanUpdate: DebounceThrottleUpdater<PanUpdateProperties, PanUpdateRe
 
 const panResolver: DebounceThrottleResolver<PanUpdateRefs, PanResolverProps> = (refs, props) => {
     const {panStateRef} = refs
-    const {secondsPerPixel, panRecordingSelectionDeltaT} = props
+    const {secondsPerPixel, panTimeseriesSelectionDeltaT} = props
     if (panStateRef === undefined || panStateRef?.current === undefined) return
     const deltaPx = (panStateRef.current.anchorX ?? 0) - (panStateRef.current.pannedX ?? 0)
     if (deltaPx === 0) return
 
     panStateRef.current.anchorX = panStateRef.current.pannedX
-    panRecordingSelectionDeltaT && panRecordingSelectionDeltaT(secondsPerPixel * deltaPx)
+    panTimeseriesSelectionDeltaT && panTimeseriesSelectionDeltaT(secondsPerPixel * deltaPx)
     // Don't reset panning state by default here--user may still be holding the mouse button
 }
 
 
-export const useThrottledPan = (refs: PanUpdateRefs, secondsPerPixel: number, panRecordingSelectionDeltaT: PanFn) => {
-    const resolverProps = useMemo(() => {return {secondsPerPixel, panRecordingSelectionDeltaT}}, [secondsPerPixel, panRecordingSelectionDeltaT])
+export const useThrottledPan = (refs: PanUpdateRefs, secondsPerPixel: number, panTimeseriesSelectionDeltaT: PanFn) => {
+    const resolverProps = useMemo(() => {return {secondsPerPixel, panTimeseriesSelectionDeltaT}}, [secondsPerPixel, panTimeseriesSelectionDeltaT])
     const panHandler = useThrottler(setNextPanUpdate, panResolver, refs, resolverProps, 50)
     return panHandler
 }
@@ -85,10 +85,10 @@ const isPanning = (ref: PanStateRef) => {
 }
 
 
-const useTimeScrollPan = (divRef: React.MutableRefObject<HTMLDivElement | null>, secondsPerPixel: number, panRecordingSelectionDeltaT: PanFn) => {
+const useTimeScrollPan = (divRef: React.MutableRefObject<HTMLDivElement | null>, secondsPerPixel: number, panTimeseriesSelectionDeltaT: PanFn) => {
     const panStateRef = useRef<PanState>({})
     const refs = useMemo(() => {return {divRef, panStateRef}}, [divRef, panStateRef])
-    const { throttler, cancelThrottled } = useThrottledPan(refs, secondsPerPixel, panRecordingSelectionDeltaT)
+    const { throttler, cancelThrottled } = useThrottledPan(refs, secondsPerPixel, panTimeseriesSelectionDeltaT)
     const resetAnchor = useCallback((mouseX: number) => {
         resetPanStateAnchor(panStateRef, mouseX, cancelThrottled)
     }, [panStateRef, cancelThrottled])

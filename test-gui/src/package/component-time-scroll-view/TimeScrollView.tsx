@@ -2,7 +2,7 @@ import { Splitter } from '@figurl/core-views';
 import React, { useEffect, useMemo, useRef } from 'react';
 import { DefaultToolbarWidth } from '../component-time-scroll-view';
 import { useAnnotations } from '../context-annotations';
-import { useTimeRange } from '../context-recording-selection';
+import { useTimeRange } from '../context-timeseries-selection';
 import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts';
 import { convert1dDataSeries, use1dScalingMatrix } from '../util-point-projection';
 import { ViewToolbar } from '../ViewToolbar';
@@ -59,27 +59,27 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
     const { hideToolbar, hideTimeAxis } = timeseriesLayoutOpts || {}
     const divRef = useRef<HTMLDivElement | null>(null)
     
-    const { visibleTimeStartSeconds, visibleTimeEndSeconds, zoomRecordingSelection } = useTimeRange()
+    const { visibleStartTimeSec, visibleEndTimeSec, zoomTimeseriesSelection } = useTimeRange()
     const timeRange = useMemo(() => (
-        [visibleTimeStartSeconds, visibleTimeEndSeconds] as [number, number]
-    ), [visibleTimeStartSeconds, visibleTimeEndSeconds])
-    const panelWidthSeconds = (visibleTimeEndSeconds ?? 0) - (visibleTimeStartSeconds ?? 0)
+        [visibleStartTimeSec, visibleEndTimeSec] as [number, number]
+    ), [visibleStartTimeSec, visibleEndTimeSec])
+    const panelWidthSeconds = (visibleEndTimeSec ?? 0) - (visibleStartTimeSec ?? 0)
 
     const definedMargins = useDefinedMargins(margins)
     const toolbarWidth = hideToolbar ? 0 : DefaultToolbarWidth
     const {panelHeight, panelWidth} = usePanelDimensions(width - toolbarWidth, height, panels.length, panelSpacing, definedMargins)
     const perPanelOffset = panelHeight + panelSpacing
 
-    const timeToPixelMatrix = use1dScalingMatrix(panelWidth, visibleTimeStartSeconds, visibleTimeEndSeconds, definedMargins.left)
+    const timeToPixelMatrix = use1dScalingMatrix(panelWidth, visibleStartTimeSec, visibleEndTimeSec, definedMargins.left)
     const {focusTimeInPixels, focusTimeIntervalInPixels} = useFocusTimeInPixels(timeToPixelMatrix)
 
-    const timeTicks = useTimeTicks(visibleTimeStartSeconds, visibleTimeEndSeconds, timeToPixelMatrix)
+    const timeTicks = useTimeTicks(visibleStartTimeSec, visibleEndTimeSec, timeToPixelMatrix)
 
-    const pixelHighlightSpans = filterAndProjectHighlightSpans(highlightSpans, visibleTimeStartSeconds, visibleTimeEndSeconds, timeToPixelMatrix)
+    const pixelHighlightSpans = filterAndProjectHighlightSpans(highlightSpans, visibleStartTimeSec, visibleEndTimeSec, timeToPixelMatrix)
 
     const timeControlActions = useActionToolbar(optionalActions ?? {})
     useEffect(() => suppressWheelScroll(divRef), [divRef])
-    const handleWheel = useTimeScrollZoom(divRef, zoomRecordingSelection)
+    const handleWheel = useTimeScrollZoom(divRef, zoomTimeseriesSelection)
     const {handleMouseDown, handleMouseUp, handleMouseLeave, handleMouseMove} = useTimeScrollEventHandlers(definedMargins.left, panelWidth, panelWidthSeconds, divRef)
 
     // TODO: It'd be nice to show some sort of visual indication of how much zoom has been requested,

@@ -1,4 +1,4 @@
-import { defaultZoomScaleFactor, ZoomDirection } from '../../context-recording-selection';
+import { defaultZoomScaleFactor, ZoomDirection } from '../../context-timeseries-selection';
 import { abs } from 'mathjs';
 import React, { useCallback, useMemo, useRef } from 'react';
 import { DebounceThrottleResolver, DebounceThrottleUpdater, useThrottler } from '../../util-rate-limiters';
@@ -16,7 +16,7 @@ type ZoomStateRefs = {
 type ZoomFn = (direction: ZoomDirection, factor?: number | undefined) => void
 
 type ZoomResolverProps = {
-    zoomRecordingSelection: ZoomFn
+    zoomTimeseriesSelection: ZoomFn
 }
 
 const zoomUpdate: DebounceThrottleUpdater<ZoomStateProperties, ZoomStateRefs> = (refs, state) => {
@@ -32,24 +32,24 @@ const zoomUpdate: DebounceThrottleUpdater<ZoomStateProperties, ZoomStateRefs> = 
 
 const zoomResolver: DebounceThrottleResolver<ZoomStateRefs, ZoomResolverProps> = (refs, props) => {
     const {zoomsCount} = refs
-    const {zoomRecordingSelection} = props
+    const {zoomTimeseriesSelection} = props
     if (!zoomsCount.current || zoomsCount.current === 0) return
     const direction = zoomsCount.current > 0 ? 'in' : 'out'
     const factor = defaultZoomScaleFactor ** abs(zoomsCount.current)
-    zoomRecordingSelection && zoomRecordingSelection(direction, factor)
+    zoomTimeseriesSelection && zoomTimeseriesSelection(direction, factor)
     zoomsCount.current = 0
 }
 
-export const useThrottledZoom = (divRef: React.MutableRefObject<HTMLDivElement | null>, zoomRecordingSelection: ZoomFn) => {
+export const useThrottledZoom = (divRef: React.MutableRefObject<HTMLDivElement | null>, zoomTimeseriesSelection: ZoomFn) => {
     const zoomsCount = useRef(0)
     const refs = useMemo(() => {return {divRef, zoomsCount}}, [divRef, zoomsCount])
-    const resolverProps = useMemo(() => { return {zoomRecordingSelection}}, [zoomRecordingSelection])
+    const resolverProps = useMemo(() => { return {zoomTimeseriesSelection}}, [zoomTimeseriesSelection])
     const zoomHandler = useThrottler(zoomUpdate, zoomResolver, refs, resolverProps, 50)
     return zoomHandler
 }
 
-const useTimeScrollZoom = (divRef: React.MutableRefObject<HTMLDivElement | null>, zoomRecordingSelection: ZoomFn) => {
-    const { throttler } = useThrottledZoom(divRef, zoomRecordingSelection)
+const useTimeScrollZoom = (divRef: React.MutableRefObject<HTMLDivElement | null>, zoomTimeseriesSelection: ZoomFn) => {
+    const { throttler } = useThrottledZoom(divRef, zoomTimeseriesSelection)
     const wheelHandler = useCallback((e: React.WheelEvent) => {
         if (e.deltaY === 0) return
         const zoomsCount = -e.deltaY/100
