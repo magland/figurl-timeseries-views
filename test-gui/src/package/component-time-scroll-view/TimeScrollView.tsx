@@ -71,7 +71,7 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
     const perPanelOffset = panelHeight + panelSpacing
 
     const timeToPixelMatrix = use1dScalingMatrix(panelWidth, visibleStartTimeSec, visibleEndTimeSec, definedMargins.left)
-    const {focusTimeInPixels, focusTimeIntervalInPixels} = useFocusTimeInPixels(timeToPixelMatrix)
+    const {currentTimeInPixels, currentTimeIntervalInPixels} = useFocusTimeInPixels(timeToPixelMatrix)
 
     const timeTicks = useTimeTicks(visibleStartTimeSec, visibleEndTimeSec, timeToPixelMatrix)
 
@@ -143,11 +143,11 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
                 height={height}
                 timeRange={timeRange}
                 margins={definedMargins}
-                focusTimePixels={focusTimeInPixels}
-                focusTimeIntervalPixels={focusTimeIntervalInPixels}
+                currentTimePixels={currentTimeInPixels}
+                currentTimeIntervalPixels={currentTimeIntervalInPixels}
             />
         )
-    }, [effectiveWidth, height, timeRange, definedMargins, focusTimeInPixels, focusTimeIntervalInPixels])
+    }, [effectiveWidth, height, timeRange, definedMargins, currentTimeInPixels, currentTimeIntervalInPixels])
 
     const {annotations} = useAnnotations()
     const annotationLayer = useMemo(() => {

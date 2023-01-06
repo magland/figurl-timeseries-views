@@ -54,7 +54,7 @@ const AnnotationsView: FunctionComponent<Props> = ({data, width, height}) => {
                         element: <EditableTextField onChange={newLabel => setAnnotationLabel(x.annotationId, newLabel)} value={x.label} />
                     },
                     time: {
-                        element: <Hyperlink onClick={() => timeseriesSelectionDispatch({type: 'setFocusTime', focusTimeSec: x.timeSec, autoScrollVisibleTimeRange: true})}>{x.timeSec}</Hyperlink>
+                        element: <Hyperlink onClick={() => timeseriesSelectionDispatch({type: 'setFocusTime', currentTimeSec: x.timeSec, autoScrollVisibleTimeRange: true})}>{x.timeSec}</Hyperlink>
                     }
                 }
             }
@@ -71,7 +71,7 @@ const AnnotationsView: FunctionComponent<Props> = ({data, width, height}) => {
                         element: <EditableTextField onChange={newLabel => setAnnotationLabel(x.annotationId, newLabel)} value={x.label} />
                     },
                     interval: {
-                        element: <Hyperlink onClick={() => timeseriesSelectionDispatch({type: 'setFocusTimeInterval', focusTimeIntervalSec: x.timeIntervalSec, autoScrollVisibleTimeRange: true})}>{formatTimeInterval(x.timeIntervalSec)}</Hyperlink>
+                        element: <Hyperlink onClick={() => timeseriesSelectionDispatch({type: 'setFocusTimeInterval', currentTimeIntervalSec: x.timeIntervalSec, autoScrollVisibleTimeRange: true})}>{formatTimeInterval(x.timeIntervalSec)}</Hyperlink>
                     }
                 }
             }

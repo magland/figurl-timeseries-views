@@ -53,14 +53,14 @@ const useMouseLeaveHandler = (divRef: DivRef, clearPanState: () => void) => {
 }
 
 
-const useClickHandler = (divRef: DivRef, clickReader: ClickReader, setTimeFocusFraction: (fraction: number, opts: {event: React.MouseEvent}) => void) => {
+const useClickHandler = (divRef: DivRef, clickReader: ClickReader, setCurrentTimeFraction: (fraction: number, opts: {event: React.MouseEvent}) => void) => {
     const handler = useCallback((e: React.MouseEvent) => {
         if (divExists(divRef)) {
             const {fraction} = clickReader(e)
-            setTimeFocusFraction(fraction, {event: e})
+            setCurrentTimeFraction(fraction, {event: e})
             setDivFocus(divRef)
         }
-    }, [clickReader, setTimeFocusFraction, divRef])
+    }, [clickReader, setCurrentTimeFraction, divRef])
 
     return handler
 }
@@ -96,12 +96,12 @@ const useMouseMoveHandler = (divRef: DivRef, clickReader: ClickReader, startPan:
 
 const useTimeScrollEventHandlers = (leftMargin: number, panelWidth: number, panelWidthSeconds: number, divRef: React.MutableRefObject<HTMLDivElement | null>) => {
     const { panTimeseriesSelectionDeltaT } = useTimeRange()
-    const { setTimeFocusFraction } = useTimeseriesSelection()
+    const { setCurrentTimeFraction } = useTimeseriesSelection()
 
     const clickReader = useClickReader(leftMargin, panelWidth)
     const secondsPerPixel = useMemo(() => panelWidthSeconds / panelWidth, [panelWidthSeconds, panelWidth])
     const {setPanUpdate, resetAnchor, startPan, clearPan, isPanning} = useTimeScrollPan(divRef, secondsPerPixel, panTimeseriesSelectionDeltaT)
-    const handleClick = useClickHandler(divRef, clickReader, setTimeFocusFraction)
+    const handleClick = useClickHandler(divRef, clickReader, setCurrentTimeFraction)
     const handleMouseDown = useMousedownHandler(divRef, clickReader, resetAnchor)
     const handleMouseUp = useMouseupHandler(divRef, isPanning, handleClick, clearPan)
     const handleMouseMove = useMouseMoveHandler(divRef, clickReader, startPan, setPanUpdate)

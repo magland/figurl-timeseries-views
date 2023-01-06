@@ -35,7 +35,7 @@ export const selectionIsValid = (r: TimeseriesSelection) => {
     // (b/c if visEnd < recStart, then visStart < recStart; if visStart > recEnd, then visEnd > recEnd.)
     if (r.visibleStartTimeSec < r.timeseriesStartTimeSec || r.timeseriesEndTimeSec < r.visibleEndTimeSec) return false
     // if (r.currentTimeSec) {
-    //     // if set, focus time must be within the visible window
+    //     // if set, current time must be within the visible window
     //     if (r.currentTimeSec < r.visibleStartTimeSec || r.currentTimeSec > r.visibleEndTimeSec) return false
     // }
 
@@ -116,14 +116,14 @@ export const useTimeseriesSelection = () => {
         const time = window * fraction
         return time + (timeseriesSelection.visibleStartTimeSec || 0)
     }, [timeseriesSelection.visibleStartTimeSec, timeseriesSelection.visibleEndTimeSec])
-    const setTimeFocus = useCallback((time: number, o: {autoScrollVisibleTimeRange?: boolean}={}) => {
+    const setCurrentTime = useCallback((time: number, o: {autoScrollVisibleTimeRange?: boolean}={}) => {
         timeseriesSelectionDispatch({
             type: 'setFocusTime',
-            focusTimeSec: time,
+            currentTimeSec: time,
             autoScrollVisibleTimeRange: o.autoScrollVisibleTimeRange
         })
     }, [timeseriesSelectionDispatch])
-    const setTimeFocusFraction = useCallback((fraction: number, opts: {event: React.MouseEvent}) => {
+    const setCurrentTimeFraction = useCallback((fraction: number, opts: {event: React.MouseEvent}) => {
         if (fraction > 1 || fraction < 0) {
             console.warn(`Attempt to set time focus to fraction outside range 0-1 (${fraction})`)
             return
@@ -131,19 +131,19 @@ export const useTimeseriesSelection = () => {
     
         timeseriesSelectionDispatch({
             type: 'setFocusTime',
-            focusTimeSec: timeForFraction(fraction),
+            currentTimeSec: timeForFraction(fraction),
             shiftKey: opts.event.shiftKey
         })
     }, [timeseriesSelectionDispatch, timeForFraction])
-    const focusTimeIsVisible = timeseriesSelection.currentTimeSec !== undefined
+    const currentTimeIsVisible = timeseriesSelection.currentTimeSec !== undefined
                                && timeseriesSelection.currentTimeSec <= (timeseriesSelection.visibleEndTimeSec || 0)
                                && timeseriesSelection.currentTimeSec >= (timeseriesSelection.visibleStartTimeSec || 0)
     return {
-        focusTime: timeseriesSelection.currentTimeSec,
-        focusTimeIsVisible,
-        focusTimeInterval: timeseriesSelection.currentTimeIntervalSec,
-        setTimeFocus,
-        setTimeFocusFraction,
+        currentTime: timeseriesSelection.currentTimeSec,
+        currentTimeIsVisible,
+        currentTimeInterval: timeseriesSelection.currentTimeIntervalSec,
+        setCurrentTime,
+        setCurrentTimeFraction,
         timeForFraction
     }
 }
@@ -197,14 +197,14 @@ type SetVisibleTimeRangeAction = {
 
 type SetFocusTimeTimeseriesSelectionAction = {
     type: 'setFocusTime',
-    focusTimeSec: number,
+    currentTimeSec: number,
     shiftKey?: boolean
     autoScrollVisibleTimeRange?: boolean
 }
 
 type SetFocusTimeIntervalTimeseriesSelectionAction = {
     type: 'setFocusTimeInterval',
-    focusTimeIntervalSec: [number, number],
+    currentTimeIntervalSec: [number, number],
     autoScrollVisibleTimeRange?: boolean
 }
 
@@ -274,13 +274,13 @@ const panTimeHelper = (state: TimeseriesSelection, panDisplacementSeconds: numbe
     }
     const keepFocus = true
     // const keepFocus = state.currentTimeSec && state.currentTimeSec > newStart && state.currentTimeSec < newEnd
-    const focus = keepFocus ? state.currentTimeSec : undefined
+    const currentTime = keepFocus ? state.currentTimeSec : undefined
 
     // Avoid creating new object if we didn't actually change anything
     if (newStart === state.visibleStartTimeSec && newEnd === state.visibleEndTimeSec) return state
 
     // console.log(`Returning new state: ${newStart} - ${newEnd} (was ${state.visibleStartTimeSec} - ${state.visibleEndTimeSec})`)
-    return {...state, visibleStartTimeSec: newStart, visibleEndTimeSec: newEnd, currentTimeSec: focus }
+    return {...state, visibleStartTimeSec: newStart, visibleEndTimeSec: newEnd, currentTimeSec: currentTime }
 }
 
 const panTime = (state: TimeseriesSelection, action: PanTimeseriesSelectionAction): TimeseriesSelection => {
@@ -356,14 +356,14 @@ const setVisibleTimeRange = (state: TimeseriesSelection, action: SetVisibleTimeR
 }
 
 const setFocusTime = (state: TimeseriesSelection, action: SetFocusTimeTimeseriesSelectionAction): TimeseriesSelection => {
-    const {focusTimeSec, shiftKey, autoScrollVisibleTimeRange} = action
-    let newState: TimeseriesSelection = { ...state, currentTimeSec: focusTimeSec, currentTimeIntervalSec: undefined }
+    const {currentTimeSec, shiftKey, autoScrollVisibleTimeRange} = action
+    let newState: TimeseriesSelection = { ...state, currentTimeSec: currentTimeSec, currentTimeIntervalSec: undefined }
     if (autoScrollVisibleTimeRange) {
         if ((state.visibleStartTimeSec !== undefined) && (state.visibleEndTimeSec !== undefined)) {
-            if ((focusTimeSec < state.visibleStartTimeSec) || (focusTimeSec > state.visibleEndTimeSec)) {
+            if ((currentTimeSec < state.visibleStartTimeSec) || (currentTimeSec > state.visibleEndTimeSec)) {
                 const span = state.visibleEndTimeSec - state.visibleStartTimeSec
-                newState.visibleStartTimeSec = focusTimeSec - span / 2
-                newState.visibleEndTimeSec = focusTimeSec + span / 2
+                newState.visibleStartTimeSec = currentTimeSec - span / 2
+                newState.visibleEndTimeSec = currentTimeSec + span / 2
                 if (newState.visibleEndTimeSec > (state.timeseriesEndTimeSec || 0)) {
                     const delta = (state.timeseriesEndTimeSec || 0) - newState.visibleEndTimeSec
                     newState.visibleStartTimeSec += delta
@@ -380,8 +380,8 @@ const setFocusTime = (state: TimeseriesSelection, action: SetFocusTimeTimeseries
     if (shiftKey) {
         const t0 = state.currentTimeSec
         if (t0 !== undefined) {
-            const t1 = Math.min(t0, focusTimeSec)
-            const t2 = Math.max(t0, focusTimeSec)
+            const t1 = Math.min(t0, currentTimeSec)
+            const t2 = Math.max(t0, currentTimeSec)
             newState = {...newState, currentTimeSec: state.currentTimeSec, currentTimeIntervalSec: [t1, t2]}
         }
     }
@@ -389,10 +389,10 @@ const setFocusTime = (state: TimeseriesSelection, action: SetFocusTimeTimeseries
 }
 
 const setFocusTimeInterval = (state: TimeseriesSelection, action: SetFocusTimeIntervalTimeseriesSelectionAction): TimeseriesSelection => {
-    const {focusTimeIntervalSec, autoScrollVisibleTimeRange} = action
-    let newState: TimeseriesSelection = { ...state, currentTimeIntervalSec: focusTimeIntervalSec }
+    const {currentTimeIntervalSec, autoScrollVisibleTimeRange} = action
+    let newState: TimeseriesSelection = { ...state, currentTimeIntervalSec: currentTimeIntervalSec }
     if (autoScrollVisibleTimeRange) {
-        const t0 = (action.focusTimeIntervalSec[0] + action.focusTimeIntervalSec[1]) / 2
+        const t0 = (action.currentTimeIntervalSec[0] + action.currentTimeIntervalSec[1]) / 2
         if ((state.visibleStartTimeSec !== undefined) && (state.visibleEndTimeSec !== undefined)) {
             if ((t0 < state.visibleStartTimeSec) || (t0 > state.visibleEndTimeSec)) {
                 const span = state.visibleEndTimeSec - state.visibleStartTimeSec
