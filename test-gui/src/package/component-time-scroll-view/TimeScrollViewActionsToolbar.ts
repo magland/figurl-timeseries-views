@@ -8,8 +8,8 @@ export type OptionalToolbarActions = {
     belowDefault?: ToolbarItem[]
 }
 
-const useActionToolbar = (props: OptionalToolbarActions) => {
-    const { aboveDefault, belowDefault } = props
+const useActionToolbar = (props?: OptionalToolbarActions) => {
+    const { aboveDefault, belowDefault } = props || {}
     const { zoomTimeseriesSelection, panTimeseriesSelection } = useTimeRange()
 
     const timeControlActions = useMemo(() => {

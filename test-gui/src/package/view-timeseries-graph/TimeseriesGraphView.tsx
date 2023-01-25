@@ -1,13 +1,11 @@
-import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
-import { DefaultToolbarWidth, TimeScrollView, TimeScrollViewPanel, usePanelDimensions, useProjectedYAxisTicks, useTimeseriesMargins, useYAxisTicks } from '../component-time-scroll-view'
-import { useTimeseriesSelectionInitialization, useTimeRange } from '../context-timeseries-selection'
-import { TimeseriesLayoutOpts } from '../types/TimeseriesLayoutOpts'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import TimeScrollView2, { useTimeScrollView2 } from '../component-time-scroll-view-2/TimeScrollView2'
+import { useTimeRange, useTimeseriesSelectionInitialization } from '../context-timeseries-selection'
 import { convert2dDataSeries, getYAxisPixelZero, use2dScalingMatrix } from '../util-point-projection'
 import { TimeseriesGraphViewData } from './TimeseriesGraphViewData'
 
 type Props = {
     data: TimeseriesGraphViewData
-    timeseriesLayoutOpts?: TimeseriesLayoutOpts
     width: number
     height: number
 }
@@ -20,14 +18,12 @@ type PanelProps = {
         pixelTimes: number[]
         pixelValues: number[]
         type: string
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         attributes: {[key: string]: any}
     }[]
 }
 
-const panelSpacing = 4
-const emptyPanelSelection = new Set<number | string>()
-
-const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOpts, width, height}) => {
+const TimeseriesGraphView: FunctionComponent<Props> = ({data, width, height}) => {
     const {datasets, series, legendOpts, timeOffset, yRange, gridlineOpts} = data
 
     const resolvedSeries = useMemo(() => (
@@ -60,12 +56,7 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
     useTimeseriesSelectionInitialization(minTime, maxTime, timeOffset || 0)
     const {visibleStartTimeSec, visibleEndTimeSec } = useTimeRange(timeOffset || 0) // timeOffset is subtracted from start and end after getting from the global state
 
-    const margins = useTimeseriesMargins(timeseriesLayoutOpts)
-
-    // Compute the per-panel pixel drawing area dimensions.
-    const panelCount = 1
-    const toolbarWidth = timeseriesLayoutOpts?.hideToolbar ? 0 : DefaultToolbarWidth
-    const { panelWidth, panelHeight } = usePanelDimensions(width - toolbarWidth, height, panelCount, panelSpacing, margins)
+    const {canvasWidth, canvasHeight} = useTimeScrollView2({width, height})
 
     const [hideLegend, setHideLegend] = useState<boolean>(false)
 
@@ -85,7 +76,7 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
         const margin = 10
         const legendHeight = 20 + seriesToInclude.length * entryHeight
         const R = location === 'northwest' ? {x: 20, y: 20, w: legendWidth, h: legendHeight} :
-                  location === 'northeast' ? {x: panelWidth - legendWidth - 20, y: 20, w: legendWidth, h: legendHeight} : undefined
+                  location === 'northeast' ? {x: canvasWidth - legendWidth - 20, y: 20, w: legendWidth, h: legendHeight} : undefined
         if (!R) return //unexpected
         context.fillStyle = 'white'
         context.strokeStyle = 'gray'
@@ -124,7 +115,7 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
                 }
             }
         })
-    }, [legendOpts, series, panelWidth, hideLegend])
+    }, [legendOpts, series, canvasWidth, hideLegend])
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (e.key === 'l') {
@@ -136,6 +127,8 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
     // By using a callback, we avoid having to complicate the props passed to the painting function; it doesn't make a big difference
     // but simplifies the prop list a bit.
     const paintPanel = useCallback((context: CanvasRenderingContext2D, props: PanelProps) => {
+        context.clearRect(0, 0, canvasWidth, canvasHeight)
+
         // don't display dashed zero line (Eric's request)
         // context.strokeStyle = 'black'
         // context.setLineDash([5, 15]);
@@ -146,6 +139,7 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
         // context.stroke()
         // context.setLineDash([]);
 
+        // eslint-disable-next-line react/prop-types
         props.dimensions.forEach(dim => {
             if (dim.type === 'line') {
                 applyLineAttributes(context, dim.attributes)
@@ -177,7 +171,7 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
         })
 
         paintLegend(context)
-    }, [paintLegend])
+    }, [paintLegend, canvasWidth, canvasHeight])
 
     const plotSeries = useMemo(() => {
         const plotSeries: {type: string, times: number[], values: number[], attributes: {[key: string]: any}}[] = []
@@ -209,20 +203,21 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
     }, [visibleStartTimeSec, visibleEndTimeSec, resolvedSeries])
 
     const pixelTransform = use2dScalingMatrix({
-        totalPixelWidth: panelWidth,
-        totalPixelHeight: panelHeight,
+        totalPixelWidth: canvasWidth,
+        totalPixelHeight: canvasHeight,
         // margins have already been accounted for since we use a panel-oriented scaling function here
         dataXMin: visibleStartTimeSec,
         dataXMax: visibleEndTimeSec,
         dataYMin: minValue,
         dataYMax: maxValue
     })
+    const [canvasContext, setCanvasContext] = useState<CanvasRenderingContext2D | undefined | null>()
+    const setCanvasElement = useCallback((elmt: HTMLCanvasElement) => {
+        setCanvasContext(elmt ? elmt.getContext('2d') : undefined)
+    }, [])
 
-    // TODO: y-axis management should probably get pushed to the TimeScrollView...
-    const yTicks = useYAxisTicks({ datamin: minValue, datamax: maxValue, pixelHeight: panelHeight })
-    const yTickSet = useProjectedYAxisTicks(yTicks, pixelTransform)
-    
-    const panels: TimeScrollViewPanel<PanelProps>[] = useMemo(() => {
+    useEffect(() => {
+        if (!canvasContext) return
         const pixelZero = getYAxisPixelZero(pixelTransform)
         // this could also be done as one matrix multiplication by concatenating the dimensions;
         // and we could even separate out the time series values (which are repeated). But probably not worth it.
@@ -238,25 +233,43 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, timeseriesLayoutOp
                 attributes: s.attributes
             }
         })
-        return [{
-            key: `position`,
-            label: ``,
-            props: {
-                pixelZero: pixelZero,
-                dimensions: pixelData
-            } as PanelProps,
-            paint: paintPanel
-        }]
-    }, [pixelTransform, paintPanel, plotSeries])
+        const panelProps: PanelProps = {
+            pixelZero: pixelZero,
+            dimensions: pixelData
+        }
+        paintPanel(canvasContext, panelProps)
+    }, [canvasContext, paintPanel, pixelTransform, plotSeries])
+    
+    // const panels: TimeScrollViewPanel<PanelProps>[] = useMemo(() => {
+    //     const pixelZero = getYAxisPixelZero(pixelTransform)
+    //     // this could also be done as one matrix multiplication by concatenating the dimensions;
+    //     // and we could even separate out the time series values (which are repeated). But probably not worth it.
+    //     // TODO: ought to profile these two versions
+    //     const pixelData = plotSeries.map((s, i) => {
+    //         const pixelPoints = convert2dDataSeries(pixelTransform, [s.times, s.values])
+    //         return {
+    //             dimensionIndex: i,
+    //             dimensionLabel: `${i}`,
+    //             pixelTimes: pixelPoints[0],
+    //             pixelValues: pixelPoints[1],
+    //             type: s.type,
+    //             attributes: s.attributes
+    //         }
+    //     })
+    //     return [{
+    //         key: `position`,
+    //         label: ``,
+    //         props: {
+    //             pixelZero: pixelZero,
+    //             dimensions: pixelData
+    //         } as PanelProps,
+    //         paint: paintPanel
+    //     }]
+    // }, [pixelTransform, paintPanel, plotSeries])
 
     const content = (
-        <TimeScrollView
-            margins={margins}
-            panels={panels}
-            panelSpacing={panelSpacing}
-            selectedPanelKeys={emptyPanelSelection}
-            timeseriesLayoutOpts={timeseriesLayoutOpts}
-            yTickSet={yTickSet}
+        <TimeScrollView2
+            onCanvasElement={elmt => setCanvasElement(elmt)}
             gridlineOpts={gridlineOpts}
             onKeyDown={handleKeyDown}
             width={width}
