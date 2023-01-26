@@ -1,6 +1,6 @@
 {
   "name": "@figurl/timeseries-views",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,7 +15,6 @@
     "copy-files": "copyfiles -u 1 src/**/*.css dist/",
     "build": "rm -rf dist && tsc && yarn copy-files",
     "prepare": "npm run build",
-    "release-github": "yarn build && yarn pack && gh release create $npm_package_version figurl-spike-sorting-views-v$npm_package_version.tgz",
     "release": "yarn build && npm publish && git tag $npm_package_version && git push --tags"
   },
   "keywords": [],
