@@ -1,5 +1,6 @@
 import { BaseCanvas } from '@figurl/core-views';
 import React, { FunctionComponent, useCallback } from 'react';
+import { TickSet } from '../component-time-scroll-view/YAxisTicks';
 import {TimeTick} from './timeTicks'
 import { paintAxes } from './TSV2PaintAxes';
 
@@ -8,6 +9,7 @@ export type TSV2AxesLayerProps = {
     timeTicks: TimeTick[]
     margins: {left: number, right: number, top: number, bottom: number}
     gridlineOpts?: {hideX: boolean, hideY: boolean}
+    yTickSet?: TickSet
     width: number
     height: number
 }

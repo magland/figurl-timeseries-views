@@ -1,8 +1,8 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import TimeScrollView2, { useTimeScrollView2 } from '../component-time-scroll-view-2/TimeScrollView2'
 import { useTimeRange, useTimeseriesSelectionInitialization } from '../context-timeseries-selection'
-import { convert2dDataSeries, getYAxisPixelZero, use2dScalingMatrix } from '../util-point-projection'
 import { TimeseriesGraphViewData } from './TimeseriesGraphViewData'
+import { Opts } from './WorkerTypes'
 
 type Props = {
     data: TimeseriesGraphViewData
@@ -10,18 +10,7 @@ type Props = {
     height: number
 }
 
-type PanelProps = {
-    pixelZero: number
-    dimensions: {
-        dimensionIndex: number
-        dimensionLabel: string
-        pixelTimes: number[]
-        pixelValues: number[]
-        type: string
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        attributes: {[key: string]: any}
-    }[]
-}
+
 
 const TimeseriesGraphView: FunctionComponent<Props> = ({data, width, height}) => {
     const {datasets, series, legendOpts, timeOffset, yRange, gridlineOpts} = data
@@ -56,66 +45,54 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, width, height}) =>
     useTimeseriesSelectionInitialization(minTime, maxTime, timeOffset || 0)
     const {visibleStartTimeSec, visibleEndTimeSec } = useTimeRange(timeOffset || 0) // timeOffset is subtracted from start and end after getting from the global state
 
-    const {canvasWidth, canvasHeight} = useTimeScrollView2({width, height})
+    const {canvasWidth, canvasHeight, margins} = useTimeScrollView2({width, height})
 
     const [hideLegend, setHideLegend] = useState<boolean>(false)
 
-    const paintLegend = useCallback((context: CanvasRenderingContext2D) => {
-        if (hideLegend) return
-        let opts = legendOpts
-        if (!opts) {
-            opts = {location: 'northeast'} // for testing
-        }
-        const seriesToInclude = series.filter(s => (s.title))
-        if (seriesToInclude.length === 0) return
-        const {location} = opts
-        const entryHeight = 18
-        const entryFontSize = 12
-        const symbolWidth = 50
-        const legendWidth = 200
-        const margin = 10
-        const legendHeight = 20 + seriesToInclude.length * entryHeight
-        const R = location === 'northwest' ? {x: 20, y: 20, w: legendWidth, h: legendHeight} :
-                  location === 'northeast' ? {x: canvasWidth - legendWidth - 20, y: 20, w: legendWidth, h: legendHeight} : undefined
-        if (!R) return //unexpected
-        context.fillStyle = 'white'
-        context.strokeStyle = 'gray'
-        context.lineWidth = 1.5
-        context.fillRect(R.x, R.y, R.w, R.h)
-        context.strokeRect(R.x, R.y, R.w, R.h)
+    const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | undefined>()
+    const [worker, setWorker] = useState<Worker | null>(null)
 
-        seriesToInclude.forEach((s, i) => {
-            const y0 = R.y + margin + i * entryHeight
-            const symbolRect = {x: R.x + margin, y: y0, w: symbolWidth, h: entryHeight}
-            const titleRect = {x: R.x + margin + symbolWidth + margin, y: y0, w: legendWidth - margin - margin - symbolWidth - margin, h: entryHeight}
-            const title = s.title || 'untitled'
-            context.fillStyle = 'black'
-            context.font = `${entryFontSize}px Arial`
-            context.fillText(title, titleRect.x, titleRect.y + titleRect.h / 2 + entryFontSize / 2)
-            if (s.type === 'line') {
-                applyLineAttributes(context, s.attributes)
-                context.beginPath()
-                context.moveTo(symbolRect.x, symbolRect.y + symbolRect.h / 2)
-                context.lineTo(symbolRect.x + symbolRect.w, symbolRect.y + symbolRect.h / 2)
-                context.stroke()
-                context.setLineDash([])
-            }
-            else if (s.type === 'marker') {
-                applyMarkerAttributes(context, s.attributes)
-                const radius = entryHeight * 0.3
-                const shape = s.attributes['shape'] ?? 'circle'
-                const center = {x: symbolRect.x + symbolRect.w / 2, y: symbolRect.y + symbolRect.h / 2}
-                if (shape === 'circle') {
-                    context.beginPath()
-                    context.ellipse(center.x, center.y, radius, radius, 0, 0, 2 * Math.PI)
-                    context.fill()
-                }
-                else if (shape === 'square') {
-                    context.fillRect(center.x - radius, center.y - radius, radius * 2, radius * 2)
-                }
-            }
+    useEffect(() => {
+        if (!canvasElement) return
+        const worker = new Worker(new URL('./worker.ts', import.meta.url))
+        const offscreenCanvas = canvasElement.transferControlToOffscreen();
+        worker.postMessage({
+            canvas: offscreenCanvas,
+        }, [offscreenCanvas])
+
+		setWorker(worker)
+
+        return () => {
+            worker.terminate()
+        }
+    }, [canvasElement])
+
+    useEffect(() => {
+        if (!worker) return
+        worker.postMessage({
+            resolvedSeries
         })
-    }, [legendOpts, series, canvasWidth, hideLegend])
+    }, [resolvedSeries, worker])
+
+    useEffect(() => {
+        if (!worker) return
+        if (visibleStartTimeSec === undefined) return
+        if (visibleEndTimeSec === undefined) return
+        const opts: Opts = {
+            canvasWidth,
+            canvasHeight,
+            margins,
+            visibleStartTimeSec,
+            visibleEndTimeSec,
+            hideLegend,
+            legendOpts: legendOpts || {location: 'northeast'},
+            minValue,
+            maxValue
+        }
+        worker.postMessage({
+            opts
+        })
+    }, [canvasWidth, canvasHeight, margins, visibleStartTimeSec, visibleEndTimeSec, worker, hideLegend, legendOpts, minValue, maxValue])
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (e.key === 'l') {
@@ -123,149 +100,11 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, width, height}) =>
         }
     }, [])
 
-    // We need to have the panelHeight before we can use it in the paint function.
-    // By using a callback, we avoid having to complicate the props passed to the painting function; it doesn't make a big difference
-    // but simplifies the prop list a bit.
-    const paintPanel = useCallback((context: CanvasRenderingContext2D, props: PanelProps) => {
-        context.clearRect(0, 0, canvasWidth, canvasHeight)
-
-        // don't display dashed zero line (Eric's request)
-        // context.strokeStyle = 'black'
-        // context.setLineDash([5, 15]);
-        // context.lineWidth = 1
-        // context.beginPath()
-        // context.moveTo(0, props.pixelZero)
-        // context.lineTo(panelWidth, props.pixelZero)
-        // context.stroke()
-        // context.setLineDash([]);
-
-        // eslint-disable-next-line react/prop-types
-        props.dimensions.forEach(dim => {
-            if (dim.type === 'line') {
-                applyLineAttributes(context, dim.attributes)
-                context.beginPath()
-                dim.pixelTimes.forEach((x, ii) => {
-                    const y = dim.pixelValues[ii]
-                    ii === 0 ? context.moveTo(x, y) : context.lineTo(x, y)
-                })
-                context.stroke()
-                context.setLineDash([])
-            }
-            else if (dim.type === 'marker') {
-                applyMarkerAttributes(context, dim.attributes)
-                const radius = dim.attributes['radius'] ?? 2
-                const shape = dim.attributes['shape'] ?? 'circle'
-                if (shape === 'circle') {
-                    dim.pixelTimes.forEach((t, ii) => {
-                        context.beginPath()
-                        context.ellipse(t, dim.pixelValues[ii], radius, radius, 0, 0, 2 * Math.PI)
-                        context.fill()
-                    })
-                }
-                else if (shape === 'square') {
-                    dim.pixelTimes.forEach((t, ii) => {
-                        context.fillRect(t - radius, dim.pixelValues[ii] - radius, radius * 2, radius * 2)
-                    })
-                }
-            }
-        })
-
-        paintLegend(context)
-    }, [paintLegend, canvasWidth, canvasHeight])
-
-    const plotSeries = useMemo(() => {
-        const plotSeries: {type: string, times: number[], values: number[], attributes: {[key: string]: any}}[] = []
-        if ((visibleStartTimeSec === undefined) || (visibleEndTimeSec === undefined)) {
-            return plotSeries
-        }
-        resolvedSeries.forEach(rs => {
-            let filteredTimeIndices: number[] = rs.t.flatMap((t: number, ii: number) => (visibleStartTimeSec <= t) && (t <= visibleEndTimeSec) ? ii : [])
-
-            // need to prepend an index before and append an index after so that lines get rendered properly
-            if ((filteredTimeIndices[0] || 0) > 0) {
-                filteredTimeIndices = [filteredTimeIndices[0] - 1, ...filteredTimeIndices]
-            }
-            if ((filteredTimeIndices[filteredTimeIndices.length - 1] || rs.t.length) < rs.t.length - 1) {
-                filteredTimeIndices.push(filteredTimeIndices[filteredTimeIndices.length - 1] + 1)
-            }
-            ////////////////////////////////////////////////////////////////////////////////
-
-            const filteredTimes = filteredTimeIndices.map(i => rs.t[i])
-            const filteredValues = filteredTimeIndices.map(index => rs.y[index])
-            plotSeries.push({
-                type: rs.type,
-                times: filteredTimes,
-                values: filteredValues,
-                attributes: rs.attributes
-            })
-        })
-        return plotSeries
-    }, [visibleStartTimeSec, visibleEndTimeSec, resolvedSeries])
-
-    const pixelTransform = use2dScalingMatrix({
-        totalPixelWidth: canvasWidth,
-        totalPixelHeight: canvasHeight,
-        // margins have already been accounted for since we use a panel-oriented scaling function here
-        dataXMin: visibleStartTimeSec,
-        dataXMax: visibleEndTimeSec,
-        dataYMin: minValue,
-        dataYMax: maxValue
-    })
-    const [canvasContext, setCanvasContext] = useState<CanvasRenderingContext2D | undefined | null>()
-    const setCanvasElement = useCallback((elmt: HTMLCanvasElement) => {
-        setCanvasContext(elmt ? elmt.getContext('2d') : undefined)
-    }, [])
-
-    useEffect(() => {
-        if (!canvasContext) return
-        const pixelZero = getYAxisPixelZero(pixelTransform)
-        // this could also be done as one matrix multiplication by concatenating the dimensions;
-        // and we could even separate out the time series values (which are repeated). But probably not worth it.
-        // TODO: ought to profile these two versions
-        const pixelData = plotSeries.map((s, i) => {
-            const pixelPoints = convert2dDataSeries(pixelTransform, [s.times, s.values])
-            return {
-                dimensionIndex: i,
-                dimensionLabel: `${i}`,
-                pixelTimes: pixelPoints[0],
-                pixelValues: pixelPoints[1],
-                type: s.type,
-                attributes: s.attributes
-            }
-        })
-        const panelProps: PanelProps = {
-            pixelZero: pixelZero,
-            dimensions: pixelData
-        }
-        paintPanel(canvasContext, panelProps)
-    }, [canvasContext, paintPanel, pixelTransform, plotSeries])
-    
-    // const panels: TimeScrollViewPanel<PanelProps>[] = useMemo(() => {
-    //     const pixelZero = getYAxisPixelZero(pixelTransform)
-    //     // this could also be done as one matrix multiplication by concatenating the dimensions;
-    //     // and we could even separate out the time series values (which are repeated). But probably not worth it.
-    //     // TODO: ought to profile these two versions
-    //     const pixelData = plotSeries.map((s, i) => {
-    //         const pixelPoints = convert2dDataSeries(pixelTransform, [s.times, s.values])
-    //         return {
-    //             dimensionIndex: i,
-    //             dimensionLabel: `${i}`,
-    //             pixelTimes: pixelPoints[0],
-    //             pixelValues: pixelPoints[1],
-    //             type: s.type,
-    //             attributes: s.attributes
-    //         }
-    //     })
-    //     return [{
-    //         key: `position`,
-    //         label: ``,
-    //         props: {
-    //             pixelZero: pixelZero,
-    //             dimensions: pixelData
-    //         } as PanelProps,
-    //         paint: paintPanel
-    //     }]
-    // }, [pixelTransform, paintPanel, plotSeries])
+    const yAxisInfo = useMemo(() => ({
+        showTicks: true,
+        yMin: minValue,
+        yMax: maxValue
+    }), [minValue, maxValue])
 
     const content = (
         <TimeScrollView2
@@ -274,19 +113,10 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, width, height}) =>
             onKeyDown={handleKeyDown}
             width={width}
             height={height}
+            yAxisInfo={yAxisInfo}
         />
     )
     return content
-}
-
-const applyLineAttributes = (context: CanvasRenderingContext2D, attributes: any) => {
-    context.strokeStyle = attributes['color'] ?? 'black'
-    context.lineWidth = attributes['width'] ?? 1.1 // 1.1 hack--but fixes the 'disappearing lines' issue
-    attributes['dash'] && context.setLineDash(attributes['dash'])
-}
-
-const applyMarkerAttributes = (context: CanvasRenderingContext2D, attributes: any) => {
-    context.fillStyle = attributes['color'] ?? 'black'
 }
 
 const min = (a: number[]) => {

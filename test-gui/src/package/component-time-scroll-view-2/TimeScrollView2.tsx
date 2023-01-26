@@ -1,9 +1,10 @@
 import { Splitter } from '@figurl/core-views';
 import React, { FunctionComponent, useEffect, useMemo, useRef } from 'react';
-import { DefaultToolbarWidth } from '../component-time-scroll-view';
+import { DefaultToolbarWidth, useYAxisTicks } from '../component-time-scroll-view';
 import useActionToolbar from '../component-time-scroll-view/TimeScrollViewActionsToolbar';
 import useTimeScrollEventHandlers, { suppressWheelScroll } from '../component-time-scroll-view/TimeScrollViewInteractions/TimeScrollViewEventHandlers';
 import useTimeScrollZoom from '../component-time-scroll-view/TimeScrollViewInteractions/useTimeScrollZoom';
+import { TickSet } from '../component-time-scroll-view/YAxisTicks';
 import { useTimeRange, useTimeseriesSelection } from '../context-timeseries-selection';
 import { ViewToolbar } from '../ViewToolbar';
 import { useTimeTicks } from './timeTicks';
@@ -17,13 +18,18 @@ type Props = {
     gridlineOpts?: {hideX: boolean, hideY: boolean}
     onKeyDown?: (e: React.KeyboardEvent) => void
     hideToolbar?: boolean
+    yAxisInfo?: {
+        showTicks: boolean
+        yMin?: number
+        yMax?: number
+    }
 }
 
 const defaultMargins = {
     left: 30,
     right: 20,
     top: 20,
-    bottom: 50
+    bottom: 30
 }
 
 export const useTimeScrollView2 = ({width, height, hideToolbar}: {width: number, height: number, hideToolbar?: boolean}) => {
@@ -41,7 +47,7 @@ export const useTimeScrollView2 = ({width, height, hideToolbar}: {width: number,
     }
 }
 
-const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasElement, gridlineOpts, onKeyDown, hideToolbar}) => {
+const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasElement, gridlineOpts, onKeyDown, hideToolbar, yAxisInfo}) => {
     const { visibleStartTimeSec, visibleEndTimeSec, zoomTimeseriesSelection } = useTimeRange()
     const {currentTime, currentTimeInterval } = useTimeseriesSelection()
     const timeRange = useMemo(() => (
@@ -58,7 +64,25 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
         )
     }, [canvasWidth, visibleStartTimeSec, visibleEndTimeSec, margins])
 
+    const yToPixel = useMemo(() => {
+        const y0 = yAxisInfo?.yMin || 0
+        const y1 = yAxisInfo?.yMax || 0
+        if (y1 <= y0) return () => (0)
+        return (y: number) => (
+            canvasHeight - margins.bottom - (y - y0) / (y1 - y0) * (canvasHeight - margins.top - margins.bottom)
+        )
+    }, [yAxisInfo, canvasHeight, margins])
+
     const timeTicks = useTimeTicks(canvasWidth, visibleStartTimeSec, visibleEndTimeSec, timeToPixel)
+
+    const yTicks = useYAxisTicks({datamin: yAxisInfo?.yMin || 0, datamax: yAxisInfo?.yMax || 0, pixelHeight: canvasHeight - margins.left - margins.right})
+    const yTickSet: TickSet = useMemo(() => (
+        {
+            datamin: yTicks.datamin,
+            datamax: yTicks.datamax,
+            ticks: yTicks.ticks.map(t => ({...t, pixelValue: yToPixel(t.dataValue)}))
+        }
+    ), [yTicks, yToPixel])
 
     const axesLayer = useMemo(() => {
         return (
@@ -68,9 +92,10 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
                 timeRange={timeRange}
                 margins={margins}
                 timeTicks={timeTicks}
+                yTickSet={yAxisInfo?.showTicks ? yTickSet : undefined}
                 gridlineOpts={gridlineOpts}
             />)
-    }, [gridlineOpts, canvasWidth, canvasHeight, timeRange, margins, timeTicks])
+    }, [gridlineOpts, canvasWidth, canvasHeight, timeRange, margins, timeTicks, yAxisInfo?.showTicks, yTickSet])
 
     const currentTimePixels = useMemo(() => (currentTime !== undefined ? timeToPixel(currentTime) : undefined), [currentTime, timeToPixel])
     const currentTimeIntervalPixels = useMemo(() => (currentTimeInterval !== undefined ? [timeToPixel(currentTimeInterval[0]), timeToPixel(currentTimeInterval[1])] as [number, number] : undefined), [currentTimeInterval, timeToPixel])
@@ -99,6 +124,7 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
             <div
                 style={{
                     position: 'relative',
+                    overflow: 'hidden',
                     width: canvasWidth,
                     height: canvasHeight
                 }}
@@ -113,6 +139,7 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
                 {axesLayer}
                 {cursorLayer}
                 <canvas
+                    style={{position: 'absolute', width: canvasWidth, height: canvasHeight}}
                     ref={onCanvasElement}
                     width={canvasWidth}
                     height={canvasHeight}
@@ -140,8 +167,8 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
             adjustable={false}
         >
             <ViewToolbar
-                width={toolbarWidth}
-                height={height}
+                width={0}
+                height={0}
                 customActions={timeControlActions}
             />
             {content}
