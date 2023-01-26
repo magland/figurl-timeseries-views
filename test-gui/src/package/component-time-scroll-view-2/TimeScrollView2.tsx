@@ -137,13 +137,13 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
                 onKeyDown={onKeyDown}
             >
                 {axesLayer}
-                {cursorLayer}
                 <canvas
                     style={{position: 'absolute', width: canvasWidth, height: canvasHeight}}
                     ref={onCanvasElement}
                     width={canvasWidth}
                     height={canvasHeight}
                 />
+                {cursorLayer}
             </div>
         )
     }, [onCanvasElement, axesLayer, cursorLayer, canvasWidth, canvasHeight, onKeyDown, handleWheel, handleMouseDown, handleMouseUp, handleMouseMove, handleMouseLeave])

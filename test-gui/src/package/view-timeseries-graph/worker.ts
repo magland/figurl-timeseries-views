@@ -105,7 +105,7 @@ const paintLegend = (context: CanvasRenderingContext2D) => {
     const margin = 10
     const legendHeight = 20 + seriesToInclude.length * entryHeight
     const R = location === 'northwest' ? { x: margins.left + 20, y: margins.top + 20, w: legendWidth, h: legendHeight } :
-        location === 'northeast' ? { x: margins.left + canvasWidth - legendWidth - 20, y: margins.top + 20, w: legendWidth, h: legendHeight } : undefined
+        location === 'northeast' ? { x: canvasWidth - margins.right - legendWidth - 20, y: margins.top + 20, w: legendWidth, h: legendHeight } : undefined
     if (!R) return //unexpected
     context.fillStyle = 'white'
     context.strokeStyle = 'gray'
