@@ -12,7 +12,7 @@ onmessage = function (evt) {
     }
     if (evt.data.opts) {
         opts = evt.data.opts
-        console.log(opts?.canvasWidth, opts?.margins.left, opts?.canvasWidth, opts?.margins.right, opts?.visibleStartTimeSec, opts?.visibleEndTimeSec)
+        // console.log(opts?.canvasWidth, opts?.margins.left, opts?.canvasWidth, opts?.margins.right, opts?.visibleStartTimeSec, opts?.visibleEndTimeSec)
         drawDebounced()
     }
     if (evt.data.resolvedSeries) {
@@ -33,6 +33,33 @@ function debounce(f: () => void, msec: number) {
     }
 }
 
+function getXCoordToPixelFn(visibleTimeStart: number, visibleTimeEnd: number, netCanvasWidth: number, leftMargin: number) {
+    // Base formula is:
+    //     margins.left + (p.x - visibleStartTimeSec) / (visibleEndTimeSec - visibleStartTimeSec) * (canvasWidth - margins.left - margins.right)
+    // we've rearranged a bit to make sure everything is precomputed that can be precomputed.
+    const drawingSpaceToTimeRatio = (netCanvasWidth/(visibleTimeEnd - visibleTimeStart))
+    const visibleStartInPixels = visibleTimeStart * drawingSpaceToTimeRatio
+    const leftMarginWithVisibleTime = leftMargin - visibleStartInPixels
+    return (x: number): number => {
+        return leftMarginWithVisibleTime + x * drawingSpaceToTimeRatio
+    }
+}
+
+function getYCoordToPixelFn(minValue: number, maxValue: number, canvasHeight: number, bottomMargin: number, topMargin: number) {
+    // Base formula is:
+    //     canvasHeight - margins.bottom - (p.y - minValue) / (maxValue - minValue) * (canvasHeight - margins.top - margins.bottom)
+    // (Notice that we have to subtract from the bottom of the visible space, because in graphics, y=0 is the top of the canvas.)
+    // 
+    const netCanvasHeight = canvasHeight - topMargin - bottomMargin
+    const drawingSpaceToValueRangeRatio = netCanvasHeight / (maxValue - minValue)
+    const canvasHeightAfterBottomMargin = canvasHeight - bottomMargin
+    const minValueInPixels = minValue * drawingSpaceToValueRangeRatio
+    const netCanvasBottom = canvasHeightAfterBottomMargin + minValueInPixels
+    return (y: number): number => {
+        return netCanvasBottom - y * drawingSpaceToValueRangeRatio
+    }
+}
+
 let drawCode = 0
 async function draw() {
     if (!canvas) return
@@ -50,7 +77,10 @@ async function draw() {
     drawCode += 1
     const thisDrawCode = drawCode
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const netCanvasWidth = canvasWidth - margins.left - margins.right
+    const xCoordToPixel = getXCoordToPixelFn(visibleStartTimeSec, visibleEndTimeSec, netCanvasWidth, margins.left)
+    const yCoordToPixel = getYCoordToPixelFn(minValue, maxValue, canvasHeight, margins.bottom, margins.top)
+
     for (const pass of (plotSeries ? [1, 2] : [1])) {
         if (thisDrawCode !== drawCode) return
 
@@ -58,26 +88,19 @@ async function draw() {
         if ((pass === 2) || (!plotSeries)) {
             plotSeries = computePlotSeries(resolvedSeries)
         }
-        const coordToPixel = (p: {x: number, y: number}): {x: number, y: number} => {
-            return {
-                x: margins.left + (p.x - visibleStartTimeSec) / (visibleEndTimeSec - visibleStartTimeSec) * (canvasWidth - margins.left - margins.right),
-                y: canvasHeight - margins.bottom - (p.y - minValue) / (maxValue - minValue) * (canvasHeight - margins.top - margins.bottom)
-            }
-        }
-        
-        const pixelZero = coordToPixel({x: 0, y: 0}).y
+        const ypixelZero = yCoordToPixel(0)
         const pixelData = plotSeries.map((s, i) => {
             return {
                 dimensionIndex: i,
                 dimensionLabel: `${i}`,
-                pixelTimes: s.times.map(t => coordToPixel({x: t, y: 0}).x),
-                pixelValues: s.values.map(y => coordToPixel({x: 0, y}).y),
+                pixelTimes: s.times.map(t => xCoordToPixel(t)),
+                pixelValues: s.values.map(y => yCoordToPixel(y)),
                 type: s.type,
                 attributes: s.attributes
             }
         })
         const panelProps: PanelProps = {
-            pixelZero: pixelZero,
+            pixelZero: ypixelZero,
             dimensions: pixelData
         }
         paintPanel(canvasContext, panelProps)
@@ -268,4 +291,4 @@ function sleepMsec(msec: number) {
     })
 }
 
-export { }
+export { };
