@@ -1,5 +1,5 @@
 import { Splitter } from '@figurl/core-views';
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { DefaultToolbarWidth } from '../component-time-scroll-view';
 import { useAnnotations } from '../context-annotations';
 import { useTimeRange } from '../context-timeseries-selection';
@@ -59,7 +59,7 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
     const { hideToolbar, hideTimeAxis } = timeseriesLayoutOpts || {}
     const divRef = useRef<HTMLDivElement | null>(null)
     
-    const { visibleStartTimeSec, visibleEndTimeSec, zoomTimeseriesSelection } = useTimeRange()
+    const { visibleStartTimeSec, visibleEndTimeSec, zoomTimeseriesSelection, panTimeseriesSelection } = useTimeRange()
     const timeRange = useMemo(() => (
         [visibleStartTimeSec, visibleEndTimeSec] as [number, number]
     ), [visibleStartTimeSec, visibleEndTimeSec])
@@ -184,6 +184,22 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
         )
     }, [annotations, definedMargins, effectiveWidth, height, timeRange, timeToPixelMatrix])
 
+    const handleKeyDown: React.KeyboardEventHandler = useCallback((e) => {
+        if (e.key === '=') {
+            zoomTimeseriesSelection('in')
+        }
+        else if (e.key === '-') {
+            zoomTimeseriesSelection('out')
+        }
+        else if (e.key === 'ArrowRight') {
+            panTimeseriesSelection('forward')
+        }
+        else if (e.key === 'ArrowLeft') {
+            panTimeseriesSelection('back')
+        }
+        onKeyDown && onKeyDown(e)
+    }, [onKeyDown, zoomTimeseriesSelection, panTimeseriesSelection])
+
     const content = useMemo(() => {
         return (
             <div
@@ -194,7 +210,7 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
                 onMouseMove={handleMouseMove}
                 onMouseOut={handleMouseLeave}
                 tabIndex={0}
-                onKeyDown={onKeyDown}
+                onKeyDown={handleKeyDown}
             >
                 {annotationLayer}
                 {axesLayer}
@@ -204,7 +220,7 @@ const TimeScrollView = <T extends {[key: string]: any}> (props: TimeScrollViewPr
             </div>
         )
     }, [style, handleWheel, handleMouseDown, handleMouseUp, handleMouseMove, handleMouseLeave,
-        annotationLayer, axesLayer, mainLayer, highlightLayer, cursorLayer, onKeyDown])
+        annotationLayer, axesLayer, mainLayer, highlightLayer, cursorLayer, handleKeyDown])
     
     if (hideToolbar) {
         return (

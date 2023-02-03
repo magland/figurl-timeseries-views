@@ -1,5 +1,5 @@
 import { Splitter } from '@figurl/core-views';
-import React, { FunctionComponent, useEffect, useMemo, useRef } from 'react';
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useRef } from 'react';
 import { DefaultToolbarWidth, useYAxisTicks } from '../component-time-scroll-view';
 import useActionToolbar from '../component-time-scroll-view/TimeScrollViewActionsToolbar';
 import useTimeScrollEventHandlers, { suppressWheelScroll } from '../component-time-scroll-view/TimeScrollViewInteractions/TimeScrollViewEventHandlers';
@@ -48,7 +48,7 @@ export const useTimeScrollView2 = ({width, height, hideToolbar}: {width: number,
 }
 
 const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasElement, gridlineOpts, onKeyDown, hideToolbar, yAxisInfo}) => {
-    const { visibleStartTimeSec, visibleEndTimeSec, zoomTimeseriesSelection } = useTimeRange()
+    const { visibleStartTimeSec, visibleEndTimeSec, zoomTimeseriesSelection, panTimeseriesSelection } = useTimeRange()
     const {currentTime, currentTimeInterval } = useTimeseriesSelection()
     const timeRange = useMemo(() => (
         [visibleStartTimeSec, visibleEndTimeSec] as [number, number]
@@ -119,6 +119,22 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
     const handleWheel = useTimeScrollZoom(divRef, zoomTimeseriesSelection)
     const {handleMouseDown, handleMouseUp, handleMouseLeave, handleMouseMove} = useTimeScrollEventHandlers(margins.left, canvasWidth - margins.left - margins.right, panelWidthSeconds, divRef)
 
+    const handleKeyDown: React.KeyboardEventHandler = useCallback((e) => {
+        if (e.key === '=') {
+            zoomTimeseriesSelection('in')
+        }
+        else if (e.key === '-') {
+            zoomTimeseriesSelection('out')
+        }
+        else if (e.key === 'ArrowRight') {
+            panTimeseriesSelection('forward')
+        }
+        else if (e.key === 'ArrowLeft') {
+            panTimeseriesSelection('back')
+        }
+        onKeyDown && onKeyDown(e)
+    }, [onKeyDown, zoomTimeseriesSelection, panTimeseriesSelection])
+
     const content = useMemo(() => {
         return (
             <div
@@ -134,7 +150,7 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
                 onMouseMove={handleMouseMove}
                 onMouseOut={handleMouseLeave}
                 tabIndex={0}
-                onKeyDown={onKeyDown}
+                onKeyDown={handleKeyDown}
             >
                 {axesLayer}
                 <canvas
@@ -146,7 +162,7 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
                 {cursorLayer}
             </div>
         )
-    }, [onCanvasElement, axesLayer, cursorLayer, canvasWidth, canvasHeight, onKeyDown, handleWheel, handleMouseDown, handleMouseUp, handleMouseMove, handleMouseLeave])
+    }, [onCanvasElement, axesLayer, cursorLayer, canvasWidth, canvasHeight, handleKeyDown, handleWheel, handleMouseDown, handleMouseUp, handleMouseMove, handleMouseLeave])
     
     const timeControlActions = useActionToolbar()
 

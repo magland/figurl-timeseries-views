@@ -10,8 +10,6 @@ type Props = {
     height: number
 }
 
-
-
 const TimeseriesGraphView: FunctionComponent<Props> = ({data, width, height}) => {
     const {datasets, series, legendOpts, timeOffset, yRange, gridlineOpts, hideToolbar} = data
 
