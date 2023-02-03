@@ -31,6 +31,7 @@ export type TimeseriesGraphViewData = {
     legendOpts?: LegendOpts
     yRange?: [number, number]
     gridlineOpts?: GridlineOpts
+    hideToolbar?: boolean
 }
 
 export const isTimeseriesGraphViewData = (x: any): x is TimeseriesGraphViewData => {
@@ -55,6 +56,7 @@ export const isTimeseriesGraphViewData = (x: any): x is TimeseriesGraphViewData 
         gridlineOpts: optional((y: any) => validateObject(y, {
             hideX: isBoolean,
             hideY: isBoolean
-        }))
+        })),
+        hideToolbar: optional(isBoolean)
     }, {allowAdditionalFields: true})
 }

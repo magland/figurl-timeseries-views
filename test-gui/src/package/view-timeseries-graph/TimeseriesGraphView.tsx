@@ -13,7 +13,7 @@ type Props = {
 
 
 const TimeseriesGraphView: FunctionComponent<Props> = ({data, width, height}) => {
-    const {datasets, series, legendOpts, timeOffset, yRange, gridlineOpts} = data
+    const {datasets, series, legendOpts, timeOffset, yRange, gridlineOpts, hideToolbar} = data
 
     const resolvedSeries = useMemo(() => (
         series.map(s => {
@@ -114,6 +114,7 @@ const TimeseriesGraphView: FunctionComponent<Props> = ({data, width, height}) =>
             width={width}
             height={height}
             yAxisInfo={yAxisInfo}
+            hideToolbar={hideToolbar}
         />
     )
     return content
