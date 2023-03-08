@@ -99,7 +99,9 @@ const simplerGridFit = (dataRange: number, maxGridLines: number) => {
 }
 
 const useYAxisTicks = (props: YAxisProps) => {
-    const { datamin, datamax, userSpecifiedZoom, pixelHeight } = props
+    const { datamin, datamax, userSpecifiedZoom } = props
+    let { pixelHeight } = props
+    if (pixelHeight <= 1) pixelHeight = 1 // safely handle case where pixelHeight is negative or zero
     const yZoom = userSpecifiedZoom ?? 1
     return useMemo(() => {
         if (datamin === undefined || datamax === undefined || datamin === datamax) return emptyTickSet
