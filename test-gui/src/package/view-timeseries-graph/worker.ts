@@ -12,7 +12,6 @@ onmessage = function (evt) {
     }
     if (evt.data.opts) {
         opts = evt.data.opts
-        console.log(opts?.canvasWidth, opts?.margins.left, opts?.canvasWidth, opts?.margins.right, opts?.visibleStartTimeSec, opts?.visibleEndTimeSec)
         drawDebounced()
     }
     if (evt.data.resolvedSeries) {
@@ -45,7 +44,7 @@ async function draw() {
     canvas.width = canvasWidth
     canvas.height = canvasHeight
 
-    let canvasContext = canvas.getContext("2d")
+    const canvasContext = canvas.getContext("2d")
     if (!canvasContext) return
     drawCode += 1
     const thisDrawCode = drawCode

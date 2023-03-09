@@ -17,6 +17,10 @@ type Props = {
     onCanvasElement: (elmt: HTMLCanvasElement) => void
     gridlineOpts?: {hideX: boolean, hideY: boolean}
     onKeyDown?: (e: React.KeyboardEvent) => void
+    onMouseDown?: (e: React.MouseEvent) => void
+    onMouseUp?: (e: React.MouseEvent) => void
+    onMouseMove?: (e: React.MouseEvent) => void
+    onMouseOut?: (e: React.MouseEvent) => void
     hideToolbar?: boolean
     yAxisInfo?: {
         showTicks: boolean
@@ -47,7 +51,7 @@ export const useTimeScrollView2 = ({width, height, hideToolbar}: {width: number,
     }
 }
 
-const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasElement, gridlineOpts, onKeyDown, hideToolbar, yAxisInfo}) => {
+const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasElement, gridlineOpts, onKeyDown, onMouseDown, onMouseMove, onMouseOut, onMouseUp, hideToolbar, yAxisInfo}) => {
     const { visibleStartTimeSec, visibleEndTimeSec, zoomTimeseriesSelection, panTimeseriesSelection } = useTimeRange()
     const {currentTime, currentTimeInterval } = useTimeseriesSelection()
     const timeRange = useMemo(() => (
@@ -135,6 +139,38 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
         onKeyDown && onKeyDown(e)
     }, [onKeyDown, zoomTimeseriesSelection, panTimeseriesSelection])
 
+    const handleMouseDown2: React.MouseEventHandler = useCallback((e) => {
+        if ((!e.shiftKey) && (!e.ctrlKey) && (!e.altKey)) {
+            handleMouseDown(e)
+        }
+        else {
+            onMouseDown && onMouseDown(e)
+        }
+    }, [handleMouseDown, onMouseDown])
+
+    const handleMouseUp2: React.MouseEventHandler = useCallback((e) => {
+        if ((!e.shiftKey) && (!e.ctrlKey) && (!e.altKey)) {
+            handleMouseUp(e)
+        }
+        else {
+            onMouseUp && onMouseUp(e)
+        }
+    }, [handleMouseUp, onMouseUp])
+
+    const handleMouseMove2: React.MouseEventHandler = useCallback((e) => {
+        if ((!e.shiftKey) && (!e.ctrlKey) && (!e.altKey)) {
+            handleMouseMove(e)
+        }
+        onMouseMove && onMouseMove(e)
+    }, [handleMouseMove, onMouseMove])
+
+    const handleMouseOut2: React.MouseEventHandler = useCallback((e) => {
+        if ((!e.shiftKey) && (!e.ctrlKey) && (!e.altKey)) {
+            handleMouseLeave(e)
+        }
+        onMouseOut && onMouseOut(e)
+    }, [handleMouseLeave, onMouseOut])
+
     const content = useMemo(() => {
         return (
             <div
@@ -145,10 +181,10 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
                     height: canvasHeight
                 }}
                 onWheel={handleWheel}
-                onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                onMouseMove={handleMouseMove}
-                onMouseOut={handleMouseLeave}
+                onMouseDown={handleMouseDown2}
+                onMouseUp={handleMouseUp2}
+                onMouseMove={handleMouseMove2}
+                onMouseOut={handleMouseOut2}
                 tabIndex={0}
                 onKeyDown={handleKeyDown}
             >
@@ -162,7 +198,7 @@ const TimeScrollView2: FunctionComponent<Props> = ({width, height, onCanvasEleme
                 {cursorLayer}
             </div>
         )
-    }, [onCanvasElement, axesLayer, cursorLayer, canvasWidth, canvasHeight, handleKeyDown, handleWheel, handleMouseDown, handleMouseUp, handleMouseMove, handleMouseLeave])
+    }, [onCanvasElement, axesLayer, cursorLayer, canvasWidth, canvasHeight, handleKeyDown, handleWheel, handleMouseDown2, handleMouseUp2, handleMouseMove2, handleMouseOut2])
     
     const timeControlActions = useActionToolbar()
 
