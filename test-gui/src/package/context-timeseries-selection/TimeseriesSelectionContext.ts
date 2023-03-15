@@ -13,6 +13,7 @@ export type TimeseriesSelection = {
 export const defaultTimeseriesSelection: TimeseriesSelection = {
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
 export const stubTimeseriesSelectionDispatch = (action: TimeseriesSelectionAction) => {}
 
 export const selectionIsValid = (r: TimeseriesSelection) => {
@@ -52,7 +53,7 @@ const TimeseriesSelectionContext = React.createContext<TimeseriesSelectionContex
     timeseriesSelectionDispatch: stubTimeseriesSelectionDispatch
 })
 
-export const useTimeseriesSelectionInitialization = (start: number, end: number, timeOffset: number=0) => {
+export const useTimeseriesSelectionInitialization = (start: number, end: number, timeOffset=0) => {
     const { timeseriesSelection, timeseriesSelectionDispatch } = useContext(TimeseriesSelectionContext)
 
     useEffect(() => {
@@ -390,7 +391,7 @@ const setFocusTime = (state: TimeseriesSelection, action: SetFocusTimeTimeseries
 
 const setFocusTimeInterval = (state: TimeseriesSelection, action: SetFocusTimeIntervalTimeseriesSelectionAction): TimeseriesSelection => {
     const {currentTimeIntervalSec, autoScrollVisibleTimeRange} = action
-    let newState: TimeseriesSelection = { ...state, currentTimeIntervalSec: currentTimeIntervalSec }
+    const newState: TimeseriesSelection = { ...state, currentTimeIntervalSec: currentTimeIntervalSec }
     if (autoScrollVisibleTimeRange) {
         const t0 = (action.currentTimeIntervalSec[0] + action.currentTimeIntervalSec[1]) / 2
         if ((state.visibleStartTimeSec !== undefined) && (state.visibleEndTimeSec !== undefined)) {

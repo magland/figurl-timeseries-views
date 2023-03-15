@@ -1,6 +1,6 @@
 {
   "name": "@figurl/timeseries-views",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@figurl/core-views": "^0.1",
-    "@figurl/interface": "^0.1",
+    "@figurl/interface": "^0.2.2",
     "@fortawesome/fontawesome-svg-core": "^6.1.1",
     "@fortawesome/free-regular-svg-icons": "^6.1.2",
     "@fortawesome/free-solid-svg-icons": "^6.1.1",
