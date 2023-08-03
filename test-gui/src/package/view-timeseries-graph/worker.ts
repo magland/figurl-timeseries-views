@@ -70,7 +70,7 @@ async function draw() {
                 dimensionIndex: i,
                 dimensionLabel: `${i}`,
                 pixelTimes: s.times.map(t => coordToPixel({x: t, y: 0}).x),
-                pixelValues: s.values.map(y => coordToPixel({x: 0, y}).y),
+                pixelValues: s.type === 'interval' ? s.values : s.values.map(y => coordToPixel({x: 0, y}).y),
                 type: s.type,
                 attributes: s.attributes
             }
@@ -94,7 +94,7 @@ const paintLegend = (context: CanvasRenderingContext2D) => {
     if (opts.hideLegend) return
     if (!resolvedSeries) return
     const { legendOpts, margins, canvasWidth } = opts
-    const seriesToInclude = resolvedSeries.filter(s => (s.title))
+    const seriesToInclude = resolvedSeries.filter(s => (s.title)).filter(s => (s.type !== 'interval'))
     if (seriesToInclude.length === 0) return
     const { location } = legendOpts
     const entryHeight = 18
@@ -205,6 +205,17 @@ const paintPanel = (context: CanvasRenderingContext2D, props: PanelProps) => {
                 dim.pixelTimes.forEach((t, ii) => {
                     context.fillRect(t - radius, dim.pixelValues[ii] - radius, radius * 2, radius * 2)
                 })
+            }
+        }
+        else if (dim.type === 'interval') {
+            applyLineAttributes(context, dim.attributes)
+            applyMarkerAttributes(context, dim.attributes)
+            for (let i = 0; i < dim.pixelTimes.length - 1; i ++) {
+                if (dim.pixelValues[i] === 0) {
+                    const tStart = dim.pixelTimes[i]
+                    const tEnd = dim.pixelTimes[i + 1]
+                    context.fillRect(tStart, margins.top, tEnd - tStart, canvasHeight - margins.top - margins.bottom - 1)
+                }
             }
         }
     })
