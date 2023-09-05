@@ -11,7 +11,10 @@ export const paintAxes = (context: CanvasRenderingContext2D, props: TSV2AxesLaye
     context.strokeStyle = 'black'
     drawLine(context, margins.left, xAxisVerticalPosition, width - margins.right, xAxisVerticalPosition)
 
-    yTickSet && paintYTicks(context, yTickSet, xAxisVerticalPosition, margins.left, width - margins.right, margins.top, {hideGridlines: gridlineOpts?.hideY})
+    // bug fix on 9/5/23
+    // const topMargin = margins.top
+    const topMargin = 0
+    yTickSet && paintYTicks(context, yTickSet, xAxisVerticalPosition, margins.left, width - margins.right, topMargin, {hideGridlines: gridlineOpts?.hideY})
 }
 
 const paintTimeTicks = (context: CanvasRenderingContext2D, timeTicks: TimeTick[], xAxisPixelHeight: number, plotTopPixelHeight: number, o: {hideGridlines?: boolean}) => {
